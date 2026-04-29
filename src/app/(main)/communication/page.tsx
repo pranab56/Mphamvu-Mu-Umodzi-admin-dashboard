@@ -1,7 +1,5 @@
-export default function page() {
-    return (
-        <div>
-            This is Communication page
-        </div>
-    )
+import CommunicationContent from "@/components/communication/CommunicationContent";
+
+export default function CommunicationPage() {
+  return <CommunicationContent />;
 }
