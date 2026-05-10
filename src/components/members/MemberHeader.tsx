@@ -21,7 +21,7 @@ export function MemberHeader() {
       
       <Sheet>
         <SheetTrigger asChild>
-          <Button className="bg-primary hover:bg-primary/90 transition-colors text-white rounded-full px-10 py-6 flex items-center gap-2 text-sm font-medium">
+          <Button className="bg-[#8B2F0E] hover:bg-[#8B2F0E]/90 transition-colors text-white rounded-full px-10 py-6 flex items-center gap-2 text-sm font-medium">
             <Plus className="w-5 h-5 stroke-[3px]" />
             Add New Member
           </Button>

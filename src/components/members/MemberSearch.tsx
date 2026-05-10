@@ -12,8 +12,8 @@ export function MemberSearch() {
         </div>
         <Input
           type="text"
-          placeholder="Search members by name or ID..."
-          className="pl-12 pr-4 py-6 w-full bg-[#E5E7EB]/50 border-none rounded-xl text-gray-700 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-[#8B2F0E]/20"
+          placeholder="Search here..."
+          className="pl-12 pr-4 py-8 w-full bg-[#E5E7EB]/50 border-none rounded-xl text-gray-700 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-[#8B2F0E]/20 text-lg font-normal"
         />
       </div>
     </div>
