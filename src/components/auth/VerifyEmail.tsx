@@ -6,18 +6,20 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { useForgotEmailOTPCheckMutation } from '../../features/auth/authApi';
 
 export default function VerifyEmail() {
   const [otp, setOtp] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isResending, setIsResending] = useState(false);
+  const [otpCheck, { isLoading }] = useForgotEmailOTPCheckMutation();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,23 +28,21 @@ export default function VerifyEmail() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (otp.length !== 6) {
-      toast.error('Please enter the complete 6-digit code');
+    if (otp.length !== 4) {
+      toast.error('Please enter the complete 4-digit code');
       return;
     }
 
-    setIsLoading(true);
+    try {
+      const res = await otpCheck({ email: email!, oneTimeCode: parseInt(otp) }).unwrap();
+      toast.success(res.message);
+      router.push(`/auth/reset-password?token=${res?.data?.verifyToken}`);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Verification failed");
+    }
 
-    // Simulate API delay
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Email verified successfully!');
 
-      // Redirect to Reset Password
-      setTimeout(() => {
-        router.push('/auth/reset-password');
-      }, 1000);
-    }, 1500);
+
   };
 
   const handleResend = () => {
@@ -55,9 +55,9 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center overflow-hidden" 
-         style={{ backgroundImage: "url('/images/auth/image.png')" }}>
-      
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center overflow-hidden"
+      style={{ backgroundImage: "url('/images/auth/image.png')" }}>
+
       {/* Dark Brown Overlay */}
       <div className="absolute inset-0 bg-[#4A200B]/30 backdrop-blur-[2px]" />
 
@@ -84,16 +84,16 @@ export default function VerifyEmail() {
         <form onSubmit={handleSubmit} className="w-full space-y-8 flex flex-col items-center">
           <div className="w-full flex justify-center">
             <InputOTP
-              maxLength={6}
+              maxLength={4}
               value={otp}
               onChange={(value) => setOtp(value)}
             >
               <InputOTPGroup className="gap-2 sm:gap-4">
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <InputOTPSlot 
-                    key={index} 
-                    index={index} 
-                    className="w-12 h-14 border border-white/20 bg-white/5 rounded-xl text-xl font-bold text-black focus:ring-1 focus:ring-[#8B2F0E]/50 focus:border-[#8B2F0E]" 
+                {[0, 1, 2, 3].map((index) => (
+                  <InputOTPSlot
+                    key={index}
+                    index={index}
+                    className="w-12 h-14 border border-white/20 bg-white/5 rounded-xl text-xl font-bold text-black focus:ring-1 focus:ring-[#8B2F0E]/50 focus:border-[#8B2F0E]"
                   />
                 ))}
               </InputOTPGroup>
@@ -103,7 +103,7 @@ export default function VerifyEmail() {
           <div className="w-full space-y-4">
             <Button
               type="submit"
-              disabled={isLoading || otp.length !== 6}
+              disabled={isLoading || otp.length !== 4}
               className="w-full h-12 bg-[#8B2F0E] hover:bg-[#70260B] text-white rounded-xl text-base font-medium transition-all shadow-xl active:scale-95 disabled:opacity-50"
             >
               {isLoading ? 'Verifying...' : 'Verify Code'}

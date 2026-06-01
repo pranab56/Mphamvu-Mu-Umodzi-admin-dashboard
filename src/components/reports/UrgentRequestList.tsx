@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Calendar as CalendarIcon, FileText, Phone, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -11,65 +10,40 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useGetEventReportsQuery, useGetSingleEventReportsQuery, useReplyEventReportsMutation } from "@/features/reports/reportsApi";
+import { Calendar as CalendarIcon, FileText, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import React from "react";
+import toast from 'react-hot-toast';
 
-interface Request {
-  id: number;
-  title: string;
+
+interface EventReport {
+  _id: string;
+  name: string;
+  eventType: string;
   description: string;
-  category: string;
-  createdOn: string;
-  deadline: string;
-  member: {
-    name: string;
-    role: string;
-    email: string;
-    phone: string;
-    address: string;
-    avatar: string;
-  };
+  eventDate: string;
+  document: string[];
+  status: string;
+  isReply: boolean;
+  reply: string;
+  createdAt: string;
 }
-
-const requests: Request[] = [
-  {
-    id: 1,
-    title: "Support for Banda Family",
-    description: "This fund is being raised to support funeral expenses and assist the family during this difficult time. Contributions will help cover burial costs...",
-    category: "Member Funeral",
-    createdOn: "April 1, 2026",
-    deadline: "April 10, 2026",
-    member: {
-      name: "John Banda",
-      role: "Member",
-      email: "john.banda@email.com",
-      phone: "+265 999 123 456",
-      address: "Lilongwe, Malawi",
-      avatar: "https://avatar.iran.liara.run/public/boy?username=John"
-    }
-  },
-  {
-    id: 2,
-    title: "Support for Banda Family",
-    description: "This fund is being raised to support funeral expenses and assist the family during this difficult time. Contributions will help cover burial costs...",
-    category: "Member Funeral",
-    createdOn: "April 1, 2026",
-    deadline: "April 10, 2026",
-    member: {
-      name: "John Banda",
-      role: "Member",
-      email: "john.banda@email.com",
-      phone: "+265 999 123 456",
-      address: "Lilongwe, Malawi",
-      avatar: "https://avatar.iran.liara.run/public/boy?username=John"
-    }
-  }
-];
 
 export function UrgentRequestList() {
   const router = useRouter();
+  const { data: reportsData, isLoading } = useGetEventReportsQuery({ page: 1 });
+  const reports: EventReport[] = reportsData?.data || [];
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.01)] h-[300px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.01)] space-y-6">
@@ -84,31 +58,73 @@ export function UrgentRequestList() {
       </div>
 
       <div className="space-y-4">
-        {requests.map((request) => (
-          <div
-            key={request.id}
-            className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-xl bg-[#F3EBE5]/30 border border-[#F3EBE5] gap-4"
-          >
-            <div className="flex-1 space-y-1">
-              <h4 className="text-base font-medium text-gray-900">{request.title}</h4>
-              <p className="text-sm text-gray-500 font-normal leading-relaxed line-clamp-1">
-                {request.description}
-              </p>
-            </div>
+        {reports.length > 0 ? (
+          reports.map((report) => (
+            <div
+              key={report._id}
+              className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-xl bg-[#F3EBE5]/30 border border-[#F3EBE5] gap-4"
+            >
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-medium text-gray-900">{report.name}</h4>
+                  {report.isReply && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[10px] h-5">Replied</Badge>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 font-normal leading-relaxed line-clamp-1">
+                  {report.description}
+                </p>
+              </div>
 
-            <UrgentRequestDrawer request={request}>
-              <Button className="h-10 px-8 rounded-lg bg-[#8B2F0E] hover:bg-[#70260B] text-white font-medium text-sm transition-all active:scale-95 shrink-0">
-                view
-              </Button>
-            </UrgentRequestDrawer>
-          </div>
-        ))}
+              <UrgentRequestDrawer reportId={report._id}>
+                <Button className="h-10 px-8 rounded-lg bg-[#8B2F0E] hover:bg-[#70260B] text-white font-medium text-sm transition-all active:scale-95 shrink-0">
+                  view
+                </Button>
+              </UrgentRequestDrawer>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-10 text-gray-500">No urgent requests found.</div>
+        )}
       </div>
     </div>
   );
 }
 
-export function UrgentRequestDrawer({ request, children }: { request: Request, children: React.ReactNode }) {
+export function UrgentRequestDrawer({ reportId, children }: { reportId: string, children: React.ReactNode }) {
+  const { data: singleReportData, isLoading } = useGetSingleEventReportsQuery({ id: reportId });
+  const [replyReport, { isLoading: isReplying }] = useReplyEventReportsMutation();
+  const [replyMessage, setReplyMessage] = React.useState("");
+
+  const report = singleReportData?.data;
+
+  const handleReply = async () => {
+    if (!replyMessage.trim()) {
+      toast.error("Please enter a reply message");
+      return;
+    }
+
+    try {
+      await replyReport({
+        id: reportId,
+        data: { reply: replyMessage }
+      }).unwrap();
+      toast.success("Reply sent successfully");
+      setReplyMessage("");
+    } catch (error) {
+      toast.error("Failed to send reply");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -120,104 +136,133 @@ export function UrgentRequestDrawer({ request, children }: { request: Request, c
             <SheetTitle className="text-2xl font-medium text-gray-900 tracking-tight">Event Details</SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-10">
-            {/* Event Info */}
-            <section className="space-y-6">
-              <h3 className="text-sm font-medium text-orange-800 tracking-wide uppercase">Event Details</h3>
-              <div className="bg-[#F3EBE5]/40 rounded-2xl p-6 border border-[#F3EBE5]/50 space-y-6">
-                <div className="flex items-center justify-between gap-4">
-                  <h4 className="text-xl font-medium text-gray-900">{request.title}</h4>
-                  <Badge className="bg-[#FFF7ED] text-[#9A3412] hover:bg-[#FFF7ED] shadow-none border-none px-3 py-1 rounded-sm text-xs font-normal">
-                    {request.category}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-500 leading-relaxed font-normal">
-                  Our fellow member&apos;s family is going through a difficult time. We are coming together to provide support during this period of mourning.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: "Created on", value: request.createdOn },
-                    { label: "Deadline", value: request.deadline }
-                  ].map((item, i) => (
-                    <div key={i} className="bg-white/80 p-4 rounded-xl border border-white space-y-1.5 shadow-[0_2px_10px_rgb(0,0,0,0.01)]">
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-normal">
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        {item.label}
-                      </div>
-                      <div className="text-sm font-medium text-gray-800">{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  <div className="text-[11px] text-gray-400 font-normal">Documents</div>
-                  <div className="flex flex-wrap gap-2">
-                    {["NID.pdf", "NID.pdf"].map((doc, i) => (
-                      <div key={i} className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-lg border border-white cursor-pointer hover:bg-white transition-colors">
-                        <FileText className="w-3.5 h-3.5 text-red-500 fill-red-50" />
-                        <span className="text-xs text-gray-600 font-medium">{doc}</span>
+          {isLoading ? (
+            <div className="h-[400px] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+            </div>
+          ) : report ? (
+            <div className="space-y-10">
+              {/* Event Info */}
+              <section className="space-y-6">
+                <h3 className="text-sm font-medium text-orange-800 tracking-wide uppercase">Event Details</h3>
+                <div className="bg-[#F3EBE5]/40 rounded-2xl p-6 border border-[#F3EBE5]/50 space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <h4 className="text-xl font-medium text-gray-900">{report.name}</h4>
+                    <Badge className="bg-[#FFF7ED] text-[#9A3412] hover:bg-[#FFF7ED] shadow-none border-none px-3 py-1 rounded-sm text-xs font-normal">
+                      {report.eventType}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-500 leading-relaxed font-normal">
+                    {report.description}
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "Created on", value: formatDate(report.createdAt) },
+                      { label: "Event Date", value: formatDate(report.eventDate) }
+                    ].map((item, i) => (
+                      <div key={i} className="bg-white/80 p-4 rounded-xl border border-white space-y-1.5 shadow-[0_2px_10px_rgb(0,0,0,0.01)]">
+                        <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-normal">
+                          <CalendarIcon className="w-3.5 h-3.5" />
+                          {item.label}
+                        </div>
+                        <div className="text-sm font-medium text-gray-800">{item.value}</div>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Member Info */}
-            <section className="space-y-6">
-              <h3 className="text-sm font-medium text-orange-800 tracking-wide uppercase">Member Details</h3>
-              <div className="bg-neutral-50/50 rounded-2xl p-6 border border-neutral-100 flex items-start gap-5">
-                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
-                  <Image
-                    src={request.member.avatar}
-                    alt="Member"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-medium text-gray-900">{request.member.name}</span>
-                      <span className="text-[10px] text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
-                        {request.member.role}
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-500 font-normal">{request.member.email}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600 font-normal">
-                      <Phone className="w-3.5 h-3.5 text-gray-400" />
-                      {request.member.phone}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600 font-normal">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      {request.member.address}
+                  <div className="space-y-3">
+                    <div className="text-[11px] text-gray-400 font-normal">Documents</div>
+                    <div className="flex flex-wrap gap-2">
+                      {report.document?.map((doc: string, i: number) => (
+                        <a
+                          key={i}
+                          href={`${process.env.NEXT_PUBLIC_BASE_URL}${doc}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-lg border border-white cursor-pointer hover:bg-white transition-colors"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-red-500 fill-red-50" />
+                          <span className="text-xs text-gray-600 font-medium">{doc.split('/').pop()}</span>
+                        </a>
+                      ))}
                     </div>
                   </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            {/* Message Input */}
-            <section className="bg-[#F3EBE5]/40 rounded-2xl p-6 border border-[#F3EBE5]/50 space-y-4">
-              <div className="text-[11px] text-gray-400 font-normal">Support Message</div>
-              <Textarea
-                placeholder="Send message to the member about this urgent event..."
-                className="min-h-[100px] bg-white border-white rounded-xl py-4 resize-none shadow-sm focus-visible:ring-primary/20"
-              />
-              <div className="flex justify-end">
-                <Button className="bg-[#8B2F0E] hover:bg-[#70260B] text-white px-8 h-10 rounded-lg text-sm font-medium shadow-md transition-all active:scale-95">
-                  Send
-                </Button>
-              </div>
-            </section>
+              {/* Member Info */}
+              <section className="space-y-6">
+                <h3 className="text-sm font-medium text-orange-800 tracking-wide uppercase">Member Details</h3>
+                <div className="bg-neutral-50/50 rounded-2xl p-6 border border-neutral-100 flex items-start gap-5">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
+                    <Image
+                      src={report.createdBy?.image || "/default-avatar.png"}
+                      alt="Member"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-medium text-gray-900">{report.createdBy?.name || "Unknown Member"}</span>
+                        <span className="text-[10px] text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold">
+                          {report.createdBy?.role || "MEMBER"}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 font-normal">{report.createdBy?.email}</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-gray-600 font-normal">
+                        <Phone className="w-3.5 h-3.5 text-gray-400" />
+                        {report.createdBy?.phone || "N/A"}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600 font-normal">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                        {report.createdBy?.address || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
 
-            <div className="text-center">
-              <button className="text-gray-500 text-xs font-normal underline hover:text-[#8B2F0E]">
-                Use these information to create a new EVENT
-              </button>
+              {/* Message Input / Reply Display */}
+              <section className="bg-[#F3EBE5]/40 rounded-2xl p-6 border border-[#F3EBE5]/50 space-y-4">
+                <div className="text-[11px] text-gray-400 font-normal">Reply Message</div>
+                {report.isReply ? (
+                  <div className="bg-white p-4 rounded-xl border border-white text-sm text-gray-700">
+                    <p className="font-medium text-gray-900 mb-1">Admin Reply:</p>
+                    {report.reply}
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder="Send message to the member about this urgent event..."
+                      className="min-h-[100px] bg-white border-white rounded-xl py-4 resize-none shadow-sm focus-visible:ring-primary/20"
+                      value={replyMessage}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReplyMessage(e.target.value)}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleReply}
+                        disabled={isReplying}
+                        className="bg-[#8B2F0E] hover:bg-[#70260B] text-white px-8 h-10 rounded-lg text-sm font-medium shadow-md transition-all active:scale-95"
+                      >
+                        {isReplying ? "Sending..." : "Send"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <div className="text-center">
+                <button className="text-gray-500 text-xs font-normal underline hover:text-[#8B2F0E]">
+                  Use these information to create a new EVENT
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-center py-10 text-gray-500">Failed to load report details.</div>
+          )}
         </ScrollArea>
       </SheetContent>
     </Sheet>

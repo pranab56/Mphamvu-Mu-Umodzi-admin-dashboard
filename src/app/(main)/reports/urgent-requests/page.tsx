@@ -7,25 +7,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { UrgentRequestDrawer } from "@/components/reports/UrgentRequestList";
 
-const requests = Array(7).fill({
-  id: 1,
-  title: "Support for Banda Family",
-  description: "This fund is being raised to support funeral expenses and assist the family during this difficult time. Contributions will help cover burial costs...",
-  category: "Member Funeral",
-  createdOn: "April 1, 2026",
-  deadline: "April 10, 2026",
-  member: {
-    name: "John Banda",
-    role: "Member",
-    email: "john.banda@email.com",
-    phone: "+265 999 123 456",
-    address: "Lilongwe, Malawi",
-    avatar: "https://avatar.iran.liara.run/public/boy?username=John"
-  }
-});
+import { useGetEventReportsQuery } from "@/features/reports/reportsApi";
+import { Badge } from "@/components/ui/badge";
 
 export default function UrgentRequestsPage() {
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const { data: reportsData, isLoading } = useGetEventReportsQuery({ page: 1 });
+  
+  const reports = reportsData?.data || [];
+  const meta = reportsData?.meta;
+
+  const filteredReports = reports.filter((report: any) => 
+    report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="pb-20">
@@ -39,7 +35,9 @@ export default function UrgentRequestsPage() {
         </button>
         <div>
           <h1 className="text-3xl font-medium text-gray-900 tracking-tight leading-none">Urgent Event Request List</h1>
-          <p className="text-sm text-gray-500 mt-2 font-normal">12 items</p>
+          <p className="text-sm text-gray-500 mt-2 font-normal">
+            {isLoading ? "Loading..." : `${meta?.total || 0} items`}
+          </p>
         </div>
       </div>
 
@@ -50,31 +48,49 @@ export default function UrgentRequestsPage() {
           <Input 
             placeholder="Search here..." 
             className="h-14 pl-12 rounded-xl bg-neutral-100 border-none text-sm placeholder:text-gray-400 focus-visible:ring-0"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
           <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
         </div>
 
         {/* Requests List */}
         <div className="space-y-4">
-          {requests.map((request, i) => (
-            <div 
-              key={i} 
-              className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-xl bg-[#F3EBE5]/30 border border-[#F3EBE5] gap-4"
-            >
-              <div className="flex-1 space-y-1">
-                <h4 className="text-base font-medium text-gray-900">{request.title}</h4>
-                <p className="text-sm text-gray-500 font-normal leading-relaxed">
-                  {request.description}
-                </p>
-              </div>
-              
-              <UrgentRequestDrawer request={request}>
-                <Button className="h-10 px-8 rounded-lg bg-[#8B2F0E] hover:bg-[#70260B] text-white font-medium text-sm transition-all active:scale-95 shrink-0">
-                  view
-                </Button>
-              </UrgentRequestDrawer>
+          {isLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#8B2F0E]"></div>
+              <p className="text-gray-500 text-sm">Fetching requests...</p>
             </div>
-          ))}
+          ) : filteredReports.length > 0 ? (
+            filteredReports.map((report: any) => (
+              <div 
+                key={report._id} 
+                className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-xl bg-[#F3EBE5]/30 border border-[#F3EBE5] gap-4"
+              >
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-medium text-gray-900">{report.name}</h4>
+                    {report.isReply && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[10px] h-5">Replied</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 font-normal leading-relaxed line-clamp-2">
+                    {report.description}
+                  </p>
+                </div>
+                
+                <UrgentRequestDrawer reportId={report._id}>
+                  <Button className="h-10 px-8 rounded-lg bg-[#8B2F0E] hover:bg-[#70260B] text-white font-medium text-sm transition-all active:scale-95 shrink-0">
+                    view
+                  </Button>
+                </UrgentRequestDrawer>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-20 text-gray-500">
+              {searchTerm ? `No requests matching "${searchTerm}"` : "No urgent requests found."}
+            </div>
+          )}
         </div>
       </div>
     </div>

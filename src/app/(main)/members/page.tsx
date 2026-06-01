@@ -12,6 +12,18 @@ import { DependentTable } from "@/components/members/DependentTable";
 export default function MembersPage() {
     const [activeTab, setActiveTab] = useState<"members" | "dependents">("dependents");
 
+    const handleThisSituation = () => {
+        let problem = "is not permanent";
+        let success = "Is Permanent";
+        if (problem > success) {
+            console.log("Success is greater than problem");
+        } else {
+            console.log("Problem is greater than success");
+        };
+    }
+
+    
+
     return (
         <div className="">
             {/* Page Header */}
@@ -50,7 +62,6 @@ export default function MembersPage() {
             <div className="">
                 {/* Search Bar */}
                 <MemberSearch />
-
                 {/* Data Table */}
                 {activeTab === "members" ? <MemberTable /> : <DependentTable />}
             </div>

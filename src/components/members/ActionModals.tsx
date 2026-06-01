@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Ban, CheckCircle2, Trash2, Upload, LogOut } from "lucide-react";
+import { Ban, CheckCircle2, Trash2, Upload, LogOut, Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +19,10 @@ interface ActionModalProps {
   trigger: ReactNode;
   type: "suspend" | "activate" | "delete" | "markComplete" | "closeEvent" | "export" | "logout";
   onConfirm?: () => void;
+  isLoading?: boolean;
 }
 
-export function ActionModal({ trigger, type, onConfirm }: ActionModalProps) {
+export function ActionModal({ trigger, type, onConfirm, isLoading }: ActionModalProps) {
   const configs = {
     suspend: {
       icon: <Ban className="w-8 h-8 text-[#E74C3C]" />,
@@ -117,13 +118,27 @@ export function ActionModal({ trigger, type, onConfirm }: ActionModalProps) {
             {current.cancelText}
           </AlertDialogCancel>
           <AlertDialogAction 
-            onClick={onConfirm}
+            onClick={(e) => {
+              if (isLoading) {
+                e.preventDefault();
+                return;
+              }
+              onConfirm?.();
+            }}
+            disabled={isLoading}
             className={cn(
-              "h-11 px-10 rounded-lg font-medium text-white shadow-sm transition-all active:scale-95 m-0 min-w-[124px]",
+              "h-11 px-10 rounded-lg font-medium text-white shadow-sm transition-all active:scale-95 m-0 min-w-[124px] flex items-center justify-center gap-2",
               current.confirmBg
             )}
           >
-            {current.confirmText}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Processing...</span>
+              </>
+            ) : (
+              current.confirmText
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

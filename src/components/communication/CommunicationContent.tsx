@@ -85,6 +85,7 @@ const DUMMY_CONVERSATIONS: Conversation[] = [
 ];
 
 export default function CommunicationContent() {
+
   const [activeTab, setActiveTab] = useState<Tab>("broadcast");
   const [conversations, setConversations] = useState<Conversation[]>(DUMMY_CONVERSATIONS);
   const [selectedChatId, setSelectedChatId] = useState<string>(DUMMY_CONVERSATIONS[0].id);
@@ -95,6 +96,7 @@ export default function CommunicationContent() {
   const selectedChat = conversations.find(c => c.id === selectedChatId) || conversations[0];
 
   const handleSendMessage = () => {
+
     if (!messageText.trim()) return;
 
     const newMessage: Message = {

@@ -4,8 +4,18 @@ import CardStates from "./CardStates";
 import ContributionTrends from "./ContributionTrends";
 import MembershipGrowth from "./MembershipGrowth";
 import RecentEvents from "./RecentEvents";
+import { useGetRecentEventsQuery, useOverviewStateQuery , useGetMembershipGrowthQuery, useGetContributionTrendsQuery } from "@/features/overview/overviewApi";
 
 export default function Overview() {
+  const { data: overviewStateData, isLoading: isOverviewStateLoading} = useOverviewStateQuery(undefined);
+
+  const {data: recentEventsData, isLoading: isRecentEventsLoading} = useGetRecentEventsQuery(undefined);
+
+  const {data: membershipGrowthData, isLoading: isMembershipGrowthLoading} = useGetMembershipGrowthQuery(undefined);
+
+  const {data: contributionTrendsData, isLoading: isContributionTrendsLoading} = useGetContributionTrendsQuery(undefined);
+
+  
   return (
     <div className="py-6 space-y-8">
 
@@ -18,16 +28,16 @@ export default function Overview() {
       </div>
 
       {/* ── Row 1: Stat Cards ── */}
-      <CardStates />
+      <CardStates data={overviewStateData?.data} isLoading={isOverviewStateLoading} />
 
       {/* ── Row 2: Charts ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <ContributionTrends />
-        <MembershipGrowth />
+        <ContributionTrends data={contributionTrendsData?.data} isLoading={isContributionTrendsLoading} />
+        <MembershipGrowth data={membershipGrowthData?.data} isLoading={isMembershipGrowthLoading} />
       </div>
 
       {/* ── Row 3: Recent Events Table ── */}
-      <RecentEvents />
+      <RecentEvents data={recentEventsData?.data} isLoading={isRecentEventsLoading} />
 
     </div>
   );

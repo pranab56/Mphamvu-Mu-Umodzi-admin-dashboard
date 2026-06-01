@@ -3,13 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Lock, Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Eye, EyeOff, Lock } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter} from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useState } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { useResetPasswordMutation } from '../../../../features/auth/authApi';
 
 function ResetPasswordContent() {
   const [password, setPassword] = useState('');
@@ -18,6 +19,11 @@ function ResetPasswordContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
+  const [resetPassword, { isLoading: isResetPasswordLoading }] = useResetPasswordMutation();
 
   const router = useRouter();
 
@@ -47,18 +53,15 @@ function ResetPasswordContent() {
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate API delay
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Password reset successfully!');
-
-      // Redirect to login
+    try {
+      const res = await resetPassword({ token, newPassword: password, confirmPassword: confirmPassword }).unwrap();
+      toast.success(res.message);
       setTimeout(() => {
         router.push('/auth/login');
       }, 1500);
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong");
+    }
   };
 
   return (

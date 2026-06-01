@@ -3,14 +3,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-const data = [
-  { month: "Jan", amount: 85000 },
-  { month: "Feb", amount: 92000 },
-  { month: "Mar", amount: 78000 },
-  { month: "Apr", amount: 125000 },
-];
+interface ContributionTrend {
+  month: string;
+  year: number;
+  total: number;
+  count: number;
+}
 
-export default function ContributionTrends() {
+interface ContributionTrendsProps {
+  data?: ContributionTrend[];
+  isLoading: boolean;
+}
+
+export default function ContributionTrends({ data, isLoading }: ContributionTrendsProps) {
+  const chartData = data?.map(item => ({
+    month: item.month,
+    amount: item.total
+  })) || [];
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-xl border-none shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] bg-white h-full p-2">
+        <CardHeader className="pb-8">
+          <CardTitle className="text-xl font-bold text-[#1A1C1F]">Contribution Trends</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[250px] w-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#A53200]"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   return (
     <Card className="rounded-xl border-none shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] bg-white h-full p-2">
       <CardHeader className="pb-8">
@@ -19,7 +43,7 @@ export default function ContributionTrends() {
       <CardContent>
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
               <XAxis 
                 dataKey="month" 
@@ -32,7 +56,6 @@ export default function ContributionTrends() {
                 axisLine={true} 
                 tickLine={true} 
                 tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
-                ticks={[0, 35000, 70000, 105000, 140000]}
               />
               <Tooltip 
                 cursor={{ fill: '#F8FAFC' }}

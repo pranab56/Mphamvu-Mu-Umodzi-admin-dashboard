@@ -3,19 +3,21 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Mail } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { useForgotEmailMutation } from '../../../../features/auth/authApi';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<{ email?: string }>({});
+  const [forgotPassword, { isLoading: isLoadingForgotPassword }] = useForgotEmailMutation();
 
   const router = useRouter();
 
@@ -39,24 +41,24 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate API delay
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const res = await forgotPassword({ email }).unwrap();
+      toast.success(res.message);
       setIsSuccess(true);
-      toast.success('Reset link sent successfully!');
-
       setTimeout(() => {
         router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
       }, 1500);
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Something went wrong");
+    }
+
+
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center overflow-hidden" 
-         style={{ backgroundImage: "url('/images/auth/image.png')" }}>
-      
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 bg-cover bg-center overflow-hidden"
+      style={{ backgroundImage: "url('/images/auth/image.png')" }}>
+
       {/* Dark Brown Overlay */}
       <div className="absolute inset-0 bg-[#4A200B]/30 backdrop-blur-[2px]" />
 
@@ -105,10 +107,10 @@ export default function ForgotPasswordPage() {
 
           <Button
             type="submit"
-            disabled={isLoading || isSuccess}
+            disabled={isLoadingForgotPassword}
             className="w-full h-12 bg-[#8B2F0E] hover:bg-[#70260B] text-white rounded-xl text-base font-medium transition-all shadow-xl active:scale-95 disabled:opacity-50"
           >
-            {isLoading ? 'Sending...' : isSuccess ? 'Code Sent!' : 'Send Reset Link'}
+            {isLoadingForgotPassword ? 'Sending...' : isSuccess ? 'Code Sent!' : 'Send Reset Link'}
           </Button>
 
           <div className="pt-2 text-center">

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +28,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ActionModal } from "../members/ActionModals";
+import { removeToken } from "../../utils/storage";
 
 const navigationItems = [
   { name: "Dashboard", path: "/", icon: LayoutGrid },
@@ -43,26 +45,38 @@ export default function AppSideBar() {
   const router = useRouter();
   const { state, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [isExiting, setIsExiting] = React.useState(false);
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
     return pathname === path || pathname.startsWith(`${path}/`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsExiting(true);
+    // Add a small delay to show the loading state as requested
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setOpenMobile(false);
-    router.push("/auth/login");
+    removeToken();
+    router.replace("/auth/login");
   };
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 border-none bg-[#E5E7EB]">
-      <SidebarContent
-        className="flex flex-col h-full bg-[#E5E7EB]"
-      >
+      <SidebarContent className="flex flex-col h-full bg-[#E5E7EB]">
         {/* ── Logo & Title ── */}
         <SidebarHeader className="px-6 pt-12 pb-8 flex flex-col items-center">
-          <Link href="/" className="flex flex-col items-center justify-center w-full" onClick={() => setOpenMobile(false)}>
-            <div className={cn("relative flex justify-center w-full mb-4", isCollapsed ? "h-12" : "h-20")}>
+          <Link
+            href="/"
+            className="flex flex-col items-center justify-center w-full"
+            onClick={() => setOpenMobile(false)}
+          >
+            <div
+              className={cn(
+                "relative flex justify-center w-full mb-4",
+                isCollapsed ? "h-12" : "h-20"
+              )}
+            >
               <Image
                 src="/icons/logo.png"
                 width={80}
@@ -75,8 +89,12 @@ export default function AppSideBar() {
             {!isCollapsed && (
               <div className="text-center w-full flex flex-col items-center">
                 <h1 className="text-3xl font-black text-[#1A1C1F] mb-1">MMU</h1>
-                <h2 className="text-xl font-bold text-[#1A1C1F] tracking-tight mb-0.5 whitespace-nowrap leading-tight">Admin Dashboard</h2>
-                <p className="text-[13px] text-gray-500 font-medium whitespace-nowrap">Receipt Observatory</p>
+                <h2 className="text-xl font-bold text-[#1A1C1F] tracking-tight mb-0.5 whitespace-nowrap leading-tight">
+                  Admin Dashboard
+                </h2>
+                <p className="text-[13px] text-gray-500 font-medium whitespace-nowrap">
+                  Receipt Observatory
+                </p>
               </div>
             )}
           </Link>
@@ -101,10 +119,24 @@ export default function AppSideBar() {
                             : "text-[#585E69] hover:bg-white/50 hover:text-[#1A1C1F] rounded-full"
                         )}
                       >
-                        <Link href={item.path} className="flex items-center w-full" onClick={() => setOpenMobile(false)}>
-                          <item.icon className={cn("w-[22px] h-[22px]", active ? "text-white" : "text-[#585E69]")} />
+                        <Link
+                          href={item.path}
+                          className="flex items-center w-full"
+                          onClick={() => setOpenMobile(false)}
+                        >
+                          <item.icon
+                            className={cn(
+                              "w-[22px] h-[22px]",
+                              active ? "text-white" : "text-[#585E69]"
+                            )}
+                          />
                           {!isCollapsed && (
-                            <span className={cn("text-[16px]", active ? "font-bold" : "font-semibold")}>
+                            <span
+                              className={cn(
+                                "text-[16px]",
+                                active ? "font-bold" : "font-semibold"
+                              )}
+                            >
                               {item.name}
                             </span>
                           )}
@@ -121,10 +153,11 @@ export default function AppSideBar() {
         {/* ── Footer / Logout ── */}
         <SidebarFooter className="p-6 mt-auto flex flex-col items-center bg-transparent">
           <div className="w-full h-px bg-gray-300/60 mb-6" />
-          
+
           <ActionModal
             type="logout"
             onConfirm={handleLogout}
+            isLoading={isExiting}
             trigger={
               <button
                 className={cn(
@@ -139,7 +172,7 @@ export default function AppSideBar() {
               </button>
             }
           />
-          
+
           {!isCollapsed && (
             <p className="text-[14px] text-gray-500 font-semibold tracking-wide">
               Copyright@app

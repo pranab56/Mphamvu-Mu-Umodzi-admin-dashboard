@@ -1,25 +1,26 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useLoginMutation } from '../../../../features/auth/authApi';
+import { saveToken } from '../../../../utils/storage';
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  const router = useRouter();
+  const [login, { isLoading }] = useLoginMutation();
+
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -47,14 +48,17 @@ export default function LoginPage() {
       return;
     }
 
-    setIsLoading(true);
-
-    // Simulate login delay
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Login successful!');
-      router.push('/');
-    }, 1500);
+    try {
+      const res: any = await login({ email, password }).unwrap();
+      toast.success(res.message);
+      saveToken(res?.data?.accessToken);
+      localStorage.setItem("refreshToken", res?.data?.refreshToken);
+      localStorage.setItem("role", res?.data?.role);
+      // Hard redirect so the middleware reads the freshly-set cookie on the new request
+      window.location.href = '/';
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to login");
+    }
   };
 
   return (

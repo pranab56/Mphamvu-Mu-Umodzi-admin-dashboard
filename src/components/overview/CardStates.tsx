@@ -5,14 +5,49 @@ import { motion } from "framer-motion";
 import { Users, Calendar, DollarSign, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const stats = [
-  { title: "Total Members", value: "245", icon: Users, color: "text-[#22C55E]", iconBg: "bg-[#DCFCE7]" },
-  { title: "Active Events", value: "12", icon: Calendar, color: "text-[#2563EB]", iconBg: "bg-[#DBEAFE]" },
-  { title: "total Collected", value: "$125,450", icon: DollarSign, color: "text-[#16A34A]", iconBg: "bg-[#DCFCE7]" },
-  { title: "Pending Payments", value: "$ 18,200", icon: AlertCircle, color: "text-[#CA8A04]", iconBg: "bg-[#FEF9C3]" },
-];
+interface CardStateData {
+  totalUser: number;
+  totalEvents: number;
+  totalContribution: number;
+  totalPendingPayments?: number;
+}
 
-export default function CardStates() {
+interface CardStatesProps {
+  data?: CardStateData;
+  isLoading: boolean;
+}
+
+export default function CardStates({ data, isLoading }: CardStatesProps) {
+  const stats = [
+    { 
+      title: "Total Members", 
+      value: isLoading ? "..." : (data?.totalUser?.toString() || "0"), 
+      icon: Users, 
+      color: "text-[#22C55E]", 
+      iconBg: "bg-[#DCFCE7]" 
+    },
+    { 
+      title: "Total Events", 
+      value: isLoading ? "..." : (data?.totalEvents?.toString() || "0"), 
+      icon: Calendar, 
+      color: "text-[#2563EB]", 
+      iconBg: "bg-[#DBEAFE]" 
+    },
+    { 
+      title: "Total Collected", 
+      value: isLoading ? "..." : `MK ${(data?.totalContribution || 0).toLocaleString()}`, 
+      icon: DollarSign, 
+      color: "text-[#16A34A]", 
+      iconBg: "bg-[#DCFCE7]" 
+    },
+    { 
+      title: "Pending Payments", 
+      value: isLoading ? "..." : `MK ${(data?.totalPendingPayments || 0).toLocaleString()}`, 
+      icon: AlertCircle, 
+      color: "text-[#CA8A04]", 
+      iconBg: "bg-[#FEF9C3]" 
+    },
+  ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
       {stats.map((stat, index) => (

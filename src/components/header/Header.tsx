@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   Bell,
   ChevronRight,
@@ -15,6 +16,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { ActionModal } from "../members/ActionModals";
+import { removeToken } from "../../utils/storage";
 
 const routeTitleMap: Record<string, string> = {
   "": "Dashboard",
@@ -34,6 +36,7 @@ const routeTitleMap: Record<string, string> = {
 export default function MyNavber() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isExiting, setIsExiting] = React.useState(false);
 
   const getBreadcrumbs = () => {
     const parts = pathname.split("/").filter(Boolean);
@@ -49,6 +52,13 @@ export default function MyNavber() {
     });
 
     return crumbs;
+  };
+
+  const handleLogout = async () => {
+    setIsExiting(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    removeToken();
+    router.replace("/auth/login");
   };
 
   const breadcrumbs = getBreadcrumbs();
@@ -124,7 +134,8 @@ export default function MyNavber() {
             
             <ActionModal 
               type="logout"
-              onConfirm={() => router.push("/auth/login")}
+              onConfirm={handleLogout}
+              isLoading={isExiting}
               trigger={
                 <DropdownMenuItem 
                   onSelect={(e) => e.preventDefault()}
