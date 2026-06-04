@@ -1,131 +1,160 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BroadcastView } from "./BroadcastView";
 import { DirectMessageView } from "./DirectMessageView";
 import { Tab, Conversation, Message } from "./types";
+import { useGetChatQuery, useDeleteChatMutation } from "@/features/chat/chatApi";
+import { useGetMessageQuery, useSendMessageMutation } from "@/features/message/messageApi";
+import { useGetMyProfileQuery } from "@/features/profile/profileApi";
+import { format } from "date-fns";
 
-// --- Dummy Data ---
-const DUMMY_CONVERSATIONS: Conversation[] = [
-  {
-    id: "1",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    unreadCount: 2,
-    messages: [
-      { id: "m1", senderId: "sarah", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: false },
-      { id: "m2", senderId: "me", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: true },
-      { id: "m3", senderId: "me", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: true },
-      { id: "m4", senderId: "sarah", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: false },
-      { id: "m5", senderId: "sarah", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: false },
-      { id: "m7", senderId: "me", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: true },
-      { id: "m8", senderId: "me", text: "Thank you for the session today! The meditation techniques really helped.", timestamp: "02:13 AM", isMe: true },
-    ]
-  },
-  {
-    id: "2",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah2",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "3",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah3",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "4",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah4",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "5",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah5",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "6",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah6",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "7",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah7",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-  {
-    id: "8",
-    name: "Sarah Amilla",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah8",
-    lastMessage: "Thank you for reaching out",
-    timestamp: "2 hours ago",
-    messages: []
-  },
-];
+interface ChatParticipant {
+  _id: string;
+  name?: string;
+  image?: string;
+}
+
+interface ChatData {
+  _id: string;
+  participants: ChatParticipant[];
+  lastMessage?: { message?: string; type?: string };
+  lastMessageAt?: string;
+  unreadCount?: number;
+}
+
+interface MessageData {
+  _id: string;
+  sender?: { _id: string } | string;
+  message?: string;
+  images?: string[];
+  createdAt?: string;
+}
 
 export default function CommunicationContent() {
-
   const [activeTab, setActiveTab] = useState<Tab>("broadcast");
-  const [conversations, setConversations] = useState<Conversation[]>(DUMMY_CONVERSATIONS);
-  const [selectedChatId, setSelectedChatId] = useState<string>(DUMMY_CONVERSATIONS[0].id);
+  const { data: profileData } = useGetMyProfileQuery({});
+  const userId = profileData?.data?._id;
+
+  const { data: chatsData, isLoading: isChatsLoading } = useGetChatQuery(
+    { userId },
+    { skip: !userId }
+  );
+
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
-  const selectedChat = conversations.find(c => c.id === selectedChatId) || conversations[0];
+  const { data: messagesData } = useGetMessageQuery(
+    { chatId: selectedChatId as string },
+    { skip: !selectedChatId }
+  );
 
-  const handleSendMessage = () => {
+  const [sendMessage] = useSendMessageMutation();
+  const [deleteChat] = useDeleteChatMutation();
 
-    if (!messageText.trim()) return;
+  // Map API chats to UI conversations
+  const conversations: Conversation[] = useMemo(() => {
+    if (!chatsData?.data?.chats) return [];
+    
+    const mapped = chatsData.data.chats.map((chat: ChatData) => {
+      const otherParticipant = chat.participants.find((p: ChatParticipant) => p._id !== userId) || chat.participants[0];
+      
+      return {
+        id: chat._id,
+        name: otherParticipant?.name || "Unknown",
+        avatar: otherParticipant?.image ? `http://10.10.7.39:5005${otherParticipant.image}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherParticipant?.name}`,
+        lastMessage: chat.lastMessage?.message || (chat.lastMessage?.type === 'image' ? "Sent an image" : "No messages yet"),
+        timestamp: chat.lastMessageAt ? format(new Date(chat.lastMessageAt), "hh:mm a") : "",
+        unreadCount: chat.unreadCount,
+        messages: [] // Messages are fetched separately
+      };
+    });
 
-    const newMessage: Message = {
-      id: Math.random().toString(36).substr(2, 9),
-      senderId: "me",
-      text: messageText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isMe: true
-    };
+    if (!searchQuery) return mapped;
 
-    setConversations(prev => prev.map(chat => {
-      if (chat.id === selectedChatId) {
-        return {
-          ...chat,
-          messages: [...chat.messages, newMessage],
-          lastMessage: messageText,
-          timestamp: "Just now"
-        };
-      }
-      return chat;
+    return mapped.filter((chat: Conversation) => 
+      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [chatsData, userId, searchQuery]);
+
+  // Set initial selected chat
+  useEffect(() => {
+    if (conversations.length > 0 && !selectedChatId) {
+      setSelectedChatId(conversations[0].id);
+    }
+  }, [conversations, selectedChatId]);
+
+  // Map selected chat messages
+  const selectedChatMessages: Message[] = useMemo(() => {
+    if (!messagesData?.data?.messages) return [];
+    
+    // API returns newest first, UI needs oldest first for bottom-to-top flow
+    const reversedMessages = [...messagesData.data.messages].reverse();
+    
+    return reversedMessages.map((msg: MessageData) => ({
+      id: msg._id,
+      senderId: (typeof msg.sender === 'object' ? msg.sender?._id : msg.sender) || '',
+      text: msg.message || "",
+      image: msg.images?.[0] || undefined,
+      timestamp: msg.createdAt ? format(new Date(msg.createdAt), "hh:mm a") : "",
+      isMe: (typeof msg.sender === 'object' ? msg.sender?._id : msg.sender) === userId
     }));
+  }, [messagesData, userId]);
 
-    setMessageText("");
+  const selectedChat = useMemo(() => {
+    const chat = conversations.find(c => c.id === selectedChatId);
+    if (chat) {
+      return { ...chat, messages: selectedChatMessages };
+    }
+    return null;
+  }, [conversations, selectedChatId, selectedChatMessages]);
+
+  const handleSendMessage = async (text: string = messageText, file?: File) => {
+    if ((!text.trim() && !file) || !selectedChatId) return;
+
+    try {
+      const formData = new FormData();
+      if (text.trim()) formData.append("message", text);
+      if (file) {
+        formData.append("images", file);
+        formData.append("type", "image");
+      } else {
+        formData.append("type", "text");
+      }
+
+      await sendMessage({ data: formData, chatId: selectedChatId }).unwrap();
+      if (!file) setMessageText("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  };
+
+
+
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      await deleteChat({ chatId }).unwrap();
+      if (selectedChatId === chatId) {
+        setSelectedChatId(null);
+      }
+    } catch (error) {
+      console.error("Failed to delete chat:", error);
+    }
   };
 
   const handleToggleChat = (chat: Conversation) => {
     setSelectedChatId(chat.id);
     setMobileShowChat(true);
   };
+
+  if (isChatsLoading && activeTab === "direct-message") {
+    return <div className="flex h-[400px] items-center justify-center">Loading chats...</div>;
+  }
 
   return (
     <div className="flex flex-col space-y-8">
@@ -169,7 +198,6 @@ export default function CommunicationContent() {
         </div>
       )}
 
-
       {/* Main Content Area */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -185,15 +213,16 @@ export default function CommunicationContent() {
           ) : (
             <DirectMessageView
               conversations={conversations}
-              selectedChat={selectedChat}
-              onSelectChat={handleToggleChat}
+              selectedChat={selectedChat as Conversation}
+              onSelectChatAction={handleToggleChat}
               messageText={messageText}
-              setMessageText={setMessageText}
-              onSend={handleSendMessage}
+              setMessageTextAction={setMessageText}
+              onSendAction={(file) => handleSendMessage(messageText, file)}
+              onDeleteChatAction={handleDeleteChat}
               searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
+              setSearchQueryAction={setSearchQuery}
               mobileShowChat={mobileShowChat}
-              setMobileShowChat={setMobileShowChat}
+              setMobileShowChatAction={setMobileShowChat}
             />
           )}
         </motion.div>

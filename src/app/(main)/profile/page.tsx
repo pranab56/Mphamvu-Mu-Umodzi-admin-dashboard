@@ -76,7 +76,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePhoneChange = (value: string, data: any) => {
+  const handlePhoneChange = (value: string, data: { dialCode: string }) => {
     setFormData((prev) => ({
       ...prev,
       phone: value.slice(data.dialCode.length),
@@ -170,8 +170,9 @@ export default function ProfilePage() {
 
       const res = await updateProfile(submitData).unwrap();
       toast.success(res.message || "Profile updated successfully");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to update profile");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to update profile");
       console.error("Update profile error:", err);
     }
   };
@@ -186,8 +187,9 @@ export default function ProfilePage() {
       const res = await changePassword(passwordData).unwrap();
       toast.success(res.message || "Password updated successfully");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to change password");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to change password");
     }
   };
 

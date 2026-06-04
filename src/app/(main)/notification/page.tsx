@@ -5,144 +5,87 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   CheckCheck,
-  Trash2,
   Package,
   UserPlus,
   AlertTriangle,
   ShieldCheck,
   Megaphone,
   Clock,
-  X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type NotifCategory = "order" | "driver" | "alert" | "system" | "promo";
-
-interface Notification {
-  id: string;
-  category: NotifCategory;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const initialNotifications: Notification[] = [
-  {
-    id: "1",
-    category: "order",
-    title: "New Order Received",
-    message: "Order #ORD-00842 has been placed by John Doe for a delivery to Downtown District.",
-    time: "2 min ago",
-    read: false,
-  },
-  {
-    id: "2",
-    category: "driver",
-    title: "Driver Request Submitted",
-    message: "Julian Dashwood has applied to become a driver. Review their profile now.",
-    time: "18 min ago",
-    read: false,
-  },
-  {
-    id: "3",
-    category: "alert",
-    title: "Delivery Delay Reported",
-    message: "Order #ORD-00791 is delayed due to traffic in the Valley Region. ETA shifted by 30 mins.",
-    time: "1 hour ago",
-    read: false,
-  },
-  {
-    id: "4",
-    category: "system",
-    title: "Driver Verified",
-    message: "Marcus Thorne's documents have been successfully verified. They are now active.",
-    time: "3 hours ago",
-    read: true,
-  },
-  {
-    id: "5",
-    category: "promo",
-    title: "Flash Sale Announcement",
-    message: "Inform users of a 20% discount on express deliveries this weekend.",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "6",
-    category: "order",
-    title: "Order Completed",
-    message: "Order #ORD-00780 has been successfully delivered to the customer.",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "7",
-    category: "alert",
-    title: "Low Vehicle Fuel Alert",
-    message: "Vehicle CA-904-XL-22 assigned to Marcus Thorne is reporting low fuel levels.",
-    time: "2 days ago",
-    read: true,
-  },
-];
+import { 
+  useGetNotificationsQuery, 
+  useReadAllNotificationsMutation, 
+  useReadSingleNotificationMutation 
+} from "@/features/notification/notificationPageApi";
+import { formatDistanceToNow } from "date-fns";
 
 // ─── Category Config ──────────────────────────────────────────────────────────
 
-const categoryConfig: Record<NotifCategory, {
+const categoryConfig: Record<string, {
   icon: React.ElementType;
   bg: string;
   iconColor: string;
   label: string;
 }> = {
-  order: { icon: Package, bg: "bg-orange-100", iconColor: "text-[#A53200]", label: "Order" },
-  driver: { icon: UserPlus, bg: "bg-blue-100", iconColor: "text-blue-600", label: "Driver" },
-  alert: { icon: AlertTriangle, bg: "bg-red-100", iconColor: "text-red-500", label: "Alert" },
-  system: { icon: ShieldCheck, bg: "bg-green-100", iconColor: "text-green-600", label: "System" },
-  promo: { icon: Megaphone, bg: "bg-purple-100", iconColor: "text-purple-600", label: "Promo" },
+  ORDER: { icon: Package, bg: "bg-orange-100", iconColor: "text-[#A53200]", label: "Order" },
+  DRIVER: { icon: UserPlus, bg: "bg-blue-100", iconColor: "text-blue-600", label: "Driver" },
+  ALERT: { icon: AlertTriangle, bg: "bg-red-100", iconColor: "text-red-500", label: "Alert" },
+  SYSTEM: { icon: ShieldCheck, bg: "bg-green-100", iconColor: "text-green-600", label: "System" },
+  PROMO: { icon: Megaphone, bg: "bg-purple-100", iconColor: "text-purple-600", label: "Promo" },
 };
 
-const filterTabs = ["All", "Unread", "Order", "Driver", "Alert", "System", "Promo"] as const;
-type FilterTab = typeof filterTabs[number];
-
-// ─── Component ────────────────────────────────────────────────────────────────
+interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  type: string;
+  createdAt: string;
+}
 
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // API Hooks
+  const { data: response, isLoading } = useGetNotificationsQuery({ page: currentPage });
+  const [readAll] = useReadAllNotificationsMutation();
+  const [readSingle] = useReadSingleNotificationMutation();
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const notifications = (response?.data?.result as Notification[]) || [];
+  const unreadCount = response?.data?.unreadCount || 0;
+  const meta = response?.meta;
 
-  const filtered = notifications.filter((n) => {
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Unread") return !n.read;
-    return n.category === activeFilter.toLowerCase();
-  });
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    toast.success("All notifications marked as read");
+  const handleMarkAllRead = async () => {
+    try {
+      await readAll({}).unwrap();
+      toast.success("All notifications marked as read");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to mark all as read");
+    }
   };
 
-  const clearAll = () => {
-    setNotifications([]);
-    toast.success("All notifications cleared");
+  const handleMarkRead = async (id: string, isRead: boolean) => {
+    if (isRead) return;
+    try {
+      await readSingle({ id }).unwrap();
+    } catch (err) {
+      console.error("Failed to mark read:", err);
+    }
   };
 
-  const markRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+  if (isLoading && currentPage === 1) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32">
+        <Loader2 className="w-10 h-10 text-[#A53200] animate-spin" />
+        <p className="mt-4 text-gray-500 font-medium">Loading notifications...</p>
+      </div>
     );
-  };
-
-  const remove = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  }
 
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-500">
@@ -162,51 +105,20 @@ export default function NotificationPage() {
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="outline"
-            onClick={markAllRead}
+            onClick={handleMarkAllRead}
             disabled={unreadCount === 0}
             className="flex-1 sm:flex-none h-10 sm:h-11 px-4 sm:px-6 rounded-lg border-gray-200 text-xs sm:text-sm font-medium text-[#2C2E33] hover:bg-gray-50 cursor-pointer disabled:opacity-40"
           >
             <CheckCheck className="w-4 h-4 mr-2" />
-            Mark read
-          </Button>
-          <Button
-            onClick={clearAll}
-            disabled={notifications.length === 0}
-            className="flex-1 sm:flex-none h-10 sm:h-11 px-4 sm:px-6 rounded-lg bg-[#A53200] hover:bg-[#0085C4] text-white text-xs sm:text-sm font-medium shadow-lg shadow-orange-100 cursor-pointer disabled:opacity-40"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Clear All
+            Mark all as read
           </Button>
         </div>
-      </div>
-
-      {/* ── Filter Tabs ── */}
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 sm:pb-0 sm:flex-wrap">
-        {filterTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveFilter(tab)}
-            className={cn(
-              "px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer whitespace-nowrap",
-              activeFilter === tab
-                ? "bg-[#A53200] text-white shadow-lg shadow-orange-100"
-                : "bg-white text-[#737780] hover:bg-gray-100 border border-gray-200"
-            )}
-          >
-            {tab}
-            {tab === "Unread" && unreadCount > 0 && (
-              <span className="ml-2 w-4 h-4 sm:w-5 sm:h-5 inline-flex items-center justify-center rounded-full bg-white/30 text-[9px] sm:text-[10px] font-bold">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-        ))}
       </div>
 
       {/* ── Notification List ── */}
       <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <AnimatePresence initial={false} mode="popLayout">
-          {filtered.length === 0 ? (
+          {notifications.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -221,19 +133,19 @@ export default function NotificationPage() {
               <p className="text-xs sm:text-sm text-gray-400 mt-1 font-normal">Check back later for updates</p>
             </motion.div>
           ) : (
-            filtered.map((notif, index) => {
-              const cfg = categoryConfig[notif.category];
+            notifications.map((notif: Notification, index: number) => {
+              const cfg = categoryConfig[notif.type] || categoryConfig.SYSTEM;
               const Icon = cfg.icon;
 
               return (
                 <motion.div
-                  key={notif.id}
+                  key={notif._id}
                   layout
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 40, height: 0, marginBottom: 0 }}
                   transition={{ duration: 0.25, delay: index * 0.02 }}
-                  onClick={() => markRead(notif.id)}
+                  onClick={() => handleMarkRead(notif._id, notif.read)}
                   className={cn(
                     "flex items-start gap-3 sm:gap-4 px-4 sm:px-6 py-5 border-b border-gray-50 last:border-none cursor-pointer transition-colors group relative",
                     !notif.read ? "bg-[#FFF9F6]" : "bg-white hover:bg-gray-50"
@@ -261,19 +173,9 @@ export default function NotificationPage() {
                             <span className="w-2 h-2 rounded-full bg-[#A53200] shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs sm:text-[13px] text-gray-500 mt-1 leading-relaxed line-clamp-2">
+                        <p className="text-xs sm:text-[13px] text-gray-500 mt-1 leading-relaxed">
                           {notif.message}
                         </p>
-                      </div>
-
-                      {/* Actions - Visible on mobile default, hover on desktop */}
-                      <div className="absolute right-2 top-4 sm:relative sm:right-0 sm:top-0 flex items-center gap-1 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); remove(notif.id); }}
-                          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
                       </div>
                     </div>
 
@@ -284,7 +186,7 @@ export default function NotificationPage() {
                       </span>
                       <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-gray-400 font-medium">
                         <Clock className="w-3 h-3" />
-                        {notif.time}
+                        {notif.createdAt ? formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true }) : ""}
                       </span>
                     </div>
                   </div>
@@ -294,6 +196,33 @@ export default function NotificationPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* ── Pagination ── */}
+      {meta && meta.totalPage > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => prev - 1)}
+            className="rounded-lg h-9"
+          >
+            Previous
+          </Button>
+          <span className="text-sm font-medium text-gray-500 mx-4">
+            Page {currentPage} of {meta.totalPage}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === meta.totalPage}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            className="rounded-lg h-9"
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

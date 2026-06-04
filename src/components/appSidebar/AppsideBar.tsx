@@ -27,6 +27,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useGetMyProfileQuery } from "@/features/profile/profileApi";
 import { ActionModal } from "../members/ActionModals";
 import { removeToken } from "../../utils/storage";
 
@@ -46,6 +47,27 @@ export default function AppSideBar() {
   const { state, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isExiting, setIsExiting] = React.useState(false);
+
+  // Fetch User Permissions
+  const { data: profileResponse } = useGetMyProfileQuery({});
+  const user = profileResponse?.data;
+
+  interface PagePermission {
+    name: string;
+    access: boolean;
+  }
+
+  const filteredItems = navigationItems.filter(item => {
+    // Super Admin sees everything
+    if (user?.role === "SUPER_ADMIN") return true;
+
+    // Check pageAccess for other roles
+    const permission = user?.pageAccess?.find(
+      (p: PagePermission) => p.name.toLowerCase() === item.name.toLowerCase()
+    );
+    
+    return permission ? permission.access : false;
+  });
 
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
@@ -105,7 +127,7 @@ export default function AppSideBar() {
           <SidebarGroup className="p-0">
             <SidebarGroupContent>
               <SidebarMenu className="gap-1.5">
-                {navigationItems.map((item) => {
+                {filteredItems.map((item) => {
                   const active = isActive(item.path);
                   return (
                     <SidebarMenuItem key={item.name}>

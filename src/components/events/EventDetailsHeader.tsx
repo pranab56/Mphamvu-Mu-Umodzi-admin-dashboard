@@ -2,9 +2,12 @@
 
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useGetSingleEventQuery } from "@/features/event/eventApi";
 
-export function EventDetailsHeader() {
+export function EventDetailsHeader({ eventId }: { eventId: string }) {
   const router = useRouter();
+  const { data: eventResponse, isLoading } = useGetSingleEventQuery({ id: eventId });
+  const event = eventResponse?.data;
 
   return (
     <div className="flex items-start gap-4 mb-8">
@@ -16,7 +19,9 @@ export function EventDetailsHeader() {
       </button>
       <div>
         <h1 className="text-2xl font-medium text-gray-900 tracking-tight">Event Information</h1>
-        <p className="text-sm text-gray-500 mt-1 font-normal">Support for Banda Family event details</p>
+        <p className="text-sm text-gray-500 mt-1 font-normal">
+          {isLoading ? "Loading..." : `${event?.name || "Event"} details`}
+        </p>
       </div>
     </div>
   );

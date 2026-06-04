@@ -1,47 +1,94 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
 import {
-  Search,
-  MessageSquare,
-  Send,
-  ChevronLeft
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { Input } from "@/components/ui/input";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import {
+  ChevronLeft,
+  Image as ImageIcon,
+  MessageSquare,
+  Search,
+  Send,
+  Trash2,
+  X
+} from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { Conversation } from "./types";
 
 interface DirectMessageViewProps {
   conversations: Conversation[];
   selectedChat: Conversation;
-  onSelectChat: (chat: Conversation) => void;
+  onSelectChatAction: (chat: Conversation) => void;
   messageText: string;
-  setMessageText: (text: string) => void;
-  onSend: () => void;
+  setMessageTextAction: (text: string) => void;
+  onSendAction: (file?: File) => void;
+  onDeleteChatAction: (chatId: string) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
+  setSearchQueryAction: (query: string) => void;
   mobileShowChat: boolean;
-  setMobileShowChat: (show: boolean) => void;
+  setMobileShowChatAction: (show: boolean) => void;
 }
 
 export function DirectMessageView({
   conversations,
   selectedChat,
-  onSelectChat,
+  onSelectChatAction,
   messageText,
-  setMessageText,
-  onSend,
+  setMessageTextAction,
+  onSendAction,
+  onDeleteChatAction,
   searchQuery,
-  setSearchQuery,
+  setSearchQueryAction,
   mobileShowChat,
-  setMobileShowChat
+  setMobileShowChatAction
 }: DirectMessageViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSendClick = () => {
+    if (messageText.trim() || selectedImage) {
+      onSendAction(selectedImage || undefined);
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -77,7 +124,7 @@ export function DirectMessageView({
                   placeholder="Search conversations"
                   className="pl-12 border-2 border-gray-300 h-12 rounded-lg text-base placeholder:text-gray-400 focus:outline-none focus:ring-0 focus-visible:ring-0 focus:border-gray-300"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQueryAction(e.target.value)}
                 />
               </div>
 
@@ -89,9 +136,9 @@ export function DirectMessageView({
                 {conversations.map((chat) => (
                   <div
                     key={chat.id}
-                    onClick={() => onSelectChat(chat)}
+                    onClick={() => onSelectChatAction(chat)}
                     className={cn(
-                      "p-4 rounded-2xl cursor-pointer border border-gray-200 flex items-center gap-4 relative",
+                      "p-4 rounded-2xl cursor-pointer border border-gray-200 flex items-center gap-4 relative group",
                       selectedChat?.id === chat.id
                         ? "bg-[#F3F4F6] shadow-sm "
                         : "bg-white hover:bg-[#F8F9FA] "
@@ -107,11 +154,43 @@ export function DirectMessageView({
                     <div className="flex-1 min-w-0 pr-2">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-bold text-base text-[#1A1C21] truncate">{chat.name}</span>
-                        {chat.unreadCount && (
-                          <div className="bg-[#DC3545] text-white text-[11px] font-bold h-6 w-6 flex items-center justify-center rounded-full shadow-lg shadow-[#DC3545]/20">
-                            {chat.unreadCount.toString().padStart(2, '0')}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {(chat.unreadCount ?? 0) > 0 && (
+                            <div className="bg-[#DC3545] text-white text-[11px] font-bold h-6 w-6 flex items-center justify-center rounded-full shadow-lg shadow-[#DC3545]/20">
+                              {(chat.unreadCount ?? 0).toString().padStart(2, '0')}
+                            </div>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-400  hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="w-4 h-4 cursor-pointer hover:text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="max-w-[400px]">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the
+                                  chat and all its messages.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-red-500 hover:bg-red-600"
+                                  onClick={() => onDeleteChatAction(chat.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <p className={cn(
@@ -143,7 +222,7 @@ export function DirectMessageView({
                   variant="ghost"
                   size="icon"
                   className="lg:hidden"
-                  onClick={() => setMobileShowChat(false)}
+                  onClick={() => setMobileShowChatAction(false)}
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </Button>
@@ -177,13 +256,25 @@ export function DirectMessageView({
                           initial={{ scale: 0.9, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           className={cn(
-                            "px-4 md:px-5 py-3 md:py-4 rounded-[18px] text-sm md:text-[15px] leading-[1.6] shadow-sm",
+                            "px-4 md:px-5 py-3 md:py-4 rounded-[18px] text-sm md:text-[15px] leading-[1.6] shadow-sm overflow-hidden",
                             message.isMe
                               ? "bg-[#0084FF] text-white rounded-tr-none shadow-[#0084FF]/10"
                               : "bg-[#E2F0E0] text-[#1A1C21] rounded-tl-none shadow-black/5"
                           )}
                         >
-                          {message.text}
+                          {message.image && (
+                            <div className="mb-2 max-w-full overflow-hidden rounded-lg">
+                              <Image
+                                src={`http://10.10.7.39:5005${message.image}`}
+                                alt="Message content"
+                                width={400}
+                                height={300}
+                                className="w-full h-auto object-cover max-h-[300px]"
+                                unoptimized
+                              />
+                            </div>
+                          )}
+                          {message.text && <div>{message.text}</div>}
                         </motion.div>
                         <span className="text-[10px] md:text-[11px] text-gray-400 mt-2 font-medium px-1">
                           {message.timestamp}
@@ -203,23 +294,64 @@ export function DirectMessageView({
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-gray-50 flex items-center gap-3 md:gap-4 shrink-0">
-              <div className="flex-1 relative">
-                <Input
-                  placeholder="Type here your message"
-                  className="w-full bg-white border border-gray-200 h-12 rounded-sm px-4 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus:border-gray-200"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && onSend()}
+            <div className="p-4 border-t border-gray-50 flex flex-col gap-3 shrink-0 bg-white">
+              {imagePreview && (
+                <div className="relative w-20 h-20 ml-12">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover rounded-lg border border-gray-100"
+                    unoptimized
+                  />
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                    onClick={removeImage}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex items-center gap-3 md:gap-4">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileChange}
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-12 w-12 transition-colors",
+                    selectedImage ? "text-[#0084FF]" : "text-gray-400 hover:text-[#0084FF]"
+                  )}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImageIcon className="w-6 h-6" />
+                </Button>
+                <div className="flex-1 relative">
+                  <Input
+                    placeholder="Type here your message"
+                    className="w-full bg-white border border-gray-200 h-12 rounded-sm px-4 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:outline-none focus:border-gray-200"
+                    value={messageText}
+                    onChange={(e) => setMessageTextAction(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendClick()}
+                  />
+                </div>
+                <Button
+                  className="bg-[#0084FF] hover:bg-[#0073E6] text-white h-12 px-5 rounded-sm font-medium transition-all  active:scale-95 flex items-center gap-2"
+                  onClick={handleSendClick}
+                  disabled={!messageText.trim() && !selectedImage}
+                >
+                  <span className="hidden md:inline">Send</span>
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
-              <Button
-                className="bg-[#0084FF] hover:bg-[#0073E6] text-white h-12 px-5 rounded-sm font-medium transition-all  active:scale-95 flex items-center gap-2"
-                onClick={onSend}
-              >
-                <span className="hidden md:inline">Send</span>
-                <Send className="w-4 h-4" />
-              </Button>
             </div>
           </Card>
         </div>

@@ -14,7 +14,6 @@ import { useForgotEmailMutation } from '../../../../features/auth/authApi';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<{ email?: string }>({});
   const [forgotPassword, { isLoading: isLoadingForgotPassword }] = useForgotEmailMutation();
@@ -48,8 +47,9 @@ export default function ForgotPasswordPage() {
       setTimeout(() => {
         router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
       }, 1500);
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Something went wrong");
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } };
+      toast.error(err?.data?.message || "Something went wrong");
     }
 
 
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
                   setEmail(e.target.value);
                   if (errors.email) setErrors({ ...errors, email: undefined });
                 }}
-                disabled={isLoading || isSuccess}
+                disabled={isLoadingForgotPassword || isSuccess}
                 className={cn(
                   "h-12 pl-12 bg-white/5 border-white/20 rounded-xl text-black placeholder:text-black/80 focus-visible:ring-1 focus-visible:ring-white/40 transition-all",
                   errors.email && "border-red-500/50 bg-red-500/10"

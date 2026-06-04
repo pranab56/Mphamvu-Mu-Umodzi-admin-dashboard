@@ -49,15 +49,16 @@ export default function LoginPage() {
     }
 
     try {
-      const res: any = await login({ email, password }).unwrap();
+      const res = await login({ email, password }).unwrap();
       toast.success(res.message);
       saveToken(res?.data?.accessToken);
       localStorage.setItem("refreshToken", res?.data?.refreshToken);
       localStorage.setItem("role", res?.data?.role);
       // Hard redirect so the middleware reads the freshly-set cookie on the new request
       window.location.href = '/';
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to login");
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } };
+      toast.error(err?.data?.message || "Failed to login");
     }
   };
 

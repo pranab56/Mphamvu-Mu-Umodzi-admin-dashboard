@@ -17,7 +17,6 @@ function ResetPasswordContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
 
   const searchParams = useSearchParams();
@@ -59,8 +58,9 @@ function ResetPasswordContent() {
       setTimeout(() => {
         router.push('/auth/login');
       }, 1500);
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Something went wrong");
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } };
+      toast.error(err?.data?.message || "Something went wrong");
     }
   };
 
@@ -152,10 +152,10 @@ function ResetPasswordContent() {
 
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isResetPasswordLoading}
             className="w-full h-12 bg-[#8B2F0E] hover:bg-[#70260B] text-white rounded-xl text-base font-medium transition-all shadow-xl active:scale-95 disabled:opacity-50"
           >
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+            {isResetPasswordLoading ? 'Resetting...' : 'Reset Password'}
           </Button>
 
           <div className="pt-2 text-center">

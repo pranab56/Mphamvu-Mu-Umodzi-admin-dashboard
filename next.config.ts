@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "humayon5002.binarybards.online",
+        hostname: "example.com",
         pathname: "/**",
       },
       {
@@ -32,9 +32,9 @@ const nextConfig: NextConfig = {
       // Add your specific uploads pattern
       {
         protocol: "http",
-        hostname: "10.10.7.65",
-        port: "5010",
-        pathname: "/uploads/**",  // This specifically allows uploads folder
+        hostname: "10.10.7.39",
+        port: "5005",
+        pathname: "/**",  // This specifically allows uploads folder
       },
     ],
   },

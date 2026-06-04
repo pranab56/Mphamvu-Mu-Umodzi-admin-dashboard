@@ -1,48 +1,99 @@
 "use client";
 
-import React from "react";
-import { Download } from "lucide-react";
+import { UrgentRequestDrawer } from "@/components/reports/UrgentRequestList";
 import { Button } from "@/components/ui/button";
-import { ReportStats } from "@/components/reports/ReportStats";
-import { RevenueChart } from "@/components/reports/RevenueChart";
-import { EventTypeChart } from "@/components/reports/EventTypeChart";
-import { TopEventsChart } from "@/components/reports/TopEventsChart";
-import { UrgentRequestList } from "@/components/reports/UrgentRequestList";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
-export default function ReportsPage() {
+import React from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { useGetEventReportsQuery } from "@/features/reports/reportsApi";
+
+interface Report {
+  _id: string;
+  name: string;
+  description: string;
+  isReply: boolean;
+}
+
+export default function UrgentRequestsPage() {
+
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const { data: reportsData, isLoading } = useGetEventReportsQuery({ page: 1 });
+
+  const reports = (reportsData?.data as Report[]) || [];
+  const meta = reportsData?.meta;
+
+  const filteredReports = reports.filter((report: Report) =>
+    report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="pb-20">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Reports & Analytics</h1>
-          <p className="text-base text-gray-500 mt-1 font-normal">Financial and contribution insights</p>
-        </div>
-        
-        <Button className="bg-[#8B2F0E] hover:bg-[#70260B] text-white rounded-full px-8 h-12 flex items-center gap-2 text-sm font-medium shadow-md transition-all active:scale-95">
-          <Download className="w-4 h-4" />
-          Export All
-        </Button>
-      </div>
-
-      {/* Summary Cards */}
-      <ReportStats />
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <RevenueChart />
-        </div>
-        <div className="lg:col-span-1">
-          <EventTypeChart />
+      <div className="flex items-start gap-4 mb-10">
+        <div className='flex items-center justify-between w-full'>
+          <h1 className="text-3xl font-medium text-gray-900 tracking-tight leading-none">Urgent Event Request List</h1>
+          <p className="text-sm text-gray-500 mt-2 font-normal">
+            {isLoading ? "Loading..." : `${meta?.total || 0} items`}
+          </p>
         </div>
       </div>
 
-      {/* Top Events Chart */}
-      <TopEventsChart />
+      {/* Main Content Card */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_10px_40px_rgb(0,0,0,0.01)] p-8 space-y-8">
+        {/* Search Bar */}
+        <div className="relative w-full">
+          <Input
+            placeholder="Search here..."
+            className="h-14 pl-12 rounded-xl bg-neutral-100 border-none text-sm placeholder:text-gray-400 focus-visible:ring-0"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+        </div>
 
-      {/* Urgent Requests Section */}
-      <UrgentRequestList />
+        {/* Requests List */}
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#8B2F0E]"></div>
+              <p className="text-gray-500 text-sm">Fetching requests...</p>
+            </div>
+          ) : filteredReports.length > 0 ? (
+            filteredReports.map((report: Report) => (
+              <div
+                key={report._id}
+                className="flex flex-col md:flex-row md:items-center justify-between p-6 rounded-xl bg-[#F3EBE5]/30 border border-[#F3EBE5] gap-4"
+              >
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-base font-medium text-gray-900">{report.name}</h4>
+                    {report.isReply && (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[10px] h-5">Replied</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 font-normal leading-relaxed line-clamp-2">
+                    {report.description}
+                  </p>
+                </div>
+
+                <UrgentRequestDrawer reportId={report._id}>
+                  <Button className="h-10 px-8 rounded-lg bg-[#8B2F0E] hover:bg-[#70260B] text-white font-medium text-sm transition-all active:scale-95 shrink-0">
+                    view
+                  </Button>
+                </UrgentRequestDrawer>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-20 text-gray-500">
+              {searchTerm ? `No requests matching "${searchTerm}"` : "No urgent requests found."}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

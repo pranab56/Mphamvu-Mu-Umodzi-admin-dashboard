@@ -6,6 +6,7 @@ export interface Message {
   id: string;
   senderId: string;
   text: string;
+  image?: string;
   timestamp: string;
   isMe: boolean;
 }

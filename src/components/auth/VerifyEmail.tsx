@@ -37,8 +37,9 @@ export default function VerifyEmail() {
       const res = await otpCheck({ email: email!, oneTimeCode: parseInt(otp) }).unwrap();
       toast.success(res.message);
       router.push(`/auth/reset-password?token=${res?.data?.verifyToken}`);
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Verification failed");
+    } catch (error: unknown) {
+      const err = error as { data?: { message?: string } };
+      toast.error(err?.data?.message || "Verification failed");
     }
 
 

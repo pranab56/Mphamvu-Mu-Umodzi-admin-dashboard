@@ -5,24 +5,12 @@ import { MemberHeader } from "@/components/members/MemberHeader";
 import { MemberStats } from "@/components/members/MemberStats";
 import { MemberSearch } from "@/components/members/MemberSearch";
 import { MemberTable } from "@/components/members/MemberTable";
-
 import { cn } from "@/lib/utils";
 import { DependentTable } from "@/components/members/DependentTable";
 
 export default function MembersPage() {
-    const [activeTab, setActiveTab] = useState<"members" | "dependents">("dependents");
-
-    const handleThisSituation = () => {
-        let problem = "is not permanent";
-        let success = "Is Permanent";
-        if (problem > success) {
-            console.log("Success is greater than problem");
-        } else {
-            console.log("Problem is greater than success");
-        };
-    }
-
-    
+    const [activeTab, setActiveTab] = useState<"members" | "dependents">("members");
+    const [searchTerm, setSearchTerm] = useState("");
 
     return (
         <div className="">
@@ -61,10 +49,14 @@ export default function MembersPage() {
             {/* Content Section */}
             <div className="">
                 {/* Search Bar */}
-                <MemberSearch />
+                <MemberSearch value={searchTerm} onChange={setSearchTerm} />
                 {/* Data Table */}
-                {activeTab === "members" ? <MemberTable /> : <DependentTable />}
+                {activeTab === "members" ? (
+                    <MemberTable searchTerm={searchTerm} />
+                ) : (
+                    <DependentTable searchTerm={searchTerm} />
+                )}
             </div>
         </div>
-    )
+    );
 }

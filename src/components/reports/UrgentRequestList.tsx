@@ -111,8 +111,9 @@ export function UrgentRequestDrawer({ reportId, children }: { reportId: string, 
       }).unwrap();
       toast.success("Reply sent successfully");
       setReplyMessage("");
-    } catch (error) {
-      toast.error("Failed to send reply");
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to send reply");
     }
   };
 

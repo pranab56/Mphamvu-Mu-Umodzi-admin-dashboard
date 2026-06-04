@@ -1,33 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Edit3, ArrowLeft, X, Save } from "lucide-react";
+import { Edit3, ArrowLeft, X, Save, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TiptapEditor from "@/components/content-management/TiptapEditor";
+import { useGetSettingByKeyQuery, useUpdateSettingByKeyMutation } from "@/features/settings/legalDocument/othersApi";
+import { toast } from "react-hot-toast";
 
 interface LegalManagementPageProps {
   title: string;
   displayTitle: string;
-  initialContent: string;
   subtitle: string;
+  pageKey: string; // "aboutUs" | "termsOfService" | "privacyPolicy"
 }
 
 export default function LegalManagementPage({
   title,
   displayTitle,
-  initialContent,
   subtitle,
+  pageKey,
 }: LegalManagementPageProps) {
   const router = useRouter();
-  const [content, setContent] = useState(initialContent);
-  const [tempContent, setTempContent] = useState(initialContent);
+  const { data: apiResponse, isLoading } = useGetSettingByKeyQuery({ key: pageKey });
+  const [updateSetting, { isLoading: isUpdating }] = useUpdateSettingByKeyMutation();
+
+  const [content, setContent] = useState("");
+  const [tempContent, setTempContent] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleSave = () => {
-    setContent(tempContent);
-    setIsModalOpen(false);
+  useEffect(() => {
+    if (apiResponse?.data) {
+      setContent(apiResponse.data);
+      setTempContent(apiResponse.data);
+    }
+  }, [apiResponse]);
+
+  const handleSave = async () => {
+    try {
+      // The update body needs the key as the field name, e.g., { termsOfService: "..." }
+      await updateSetting({ 
+        data: { [pageKey]: tempContent } 
+      }).unwrap();
+      
+      setContent(tempContent);
+      setIsModalOpen(false);
+      toast.success(`${title} updated successfully`);
+    } catch (err: unknown) {
+      const error = err as { data?: { message?: string } };
+      toast.error(error?.data?.message || "Failed to update content");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-[400px] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-[#A53200]" />
+        <p className="text-gray-500 text-sm font-medium">Loading {title}...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full py-6 pb-10">
@@ -80,7 +112,7 @@ export default function LegalManagementPage({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => !isUpdating && setIsModalOpen(false)}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm cursor-pointer"
             />
             <motion.div
@@ -96,8 +128,9 @@ export default function LegalManagementPage({
                   <p className="text-[12px] text-gray-400 font-medium">Update the content shown to users.</p>
                 </div>
                 <button
+                  disabled={isUpdating}
                   onClick={() => setIsModalOpen(false)}
-                  className="w-9 h-9 rounded-full bg-white hover:bg-gray-100 border border-gray-100 flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-white hover:bg-gray-100 border border-gray-100 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <X className="w-4 h-4 text-gray-600" />
                 </button>
@@ -114,17 +147,18 @@ export default function LegalManagementPage({
               {/* Modal Actions */}
               <div className="px-8 py-5 border-t border-gray-100 bg-gray-50/30 flex justify-end gap-3">
                 <button
+                  disabled={isUpdating}
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold text-[14px] hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold text-[14px] hover:bg-gray-100 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
+                  disabled={isUpdating}
                   onClick={handleSave}
-                  className="px-8 py-2.5 rounded-xl bg-primary text-white font-bold text-[14px] hover:bg-primary/80 transition-colors cursor-pointer shadow-lg shadow-primary/20 flex items-center gap-2"
+                  className="px-8 py-2.5 rounded-xl bg-primary text-white font-bold text-[14px] hover:bg-primary/80 transition-colors cursor-pointer shadow-lg shadow-primary/20 flex items-center gap-2 min-w-[140px] justify-center"
                 >
-                  <Save className="w-4 h-4" />
-                  Save Changes
+                  {isUpdating ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <><Save className="w-4 h-4" /> Save Changes</>}
                 </button>
               </div>
             </motion.div>

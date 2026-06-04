@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { EventDetailsContent } from "./EventDetailsContent";
 import { EventTransactionHistory } from "./EventTransactionHistory";
 
-export function EventDetailsTabs() {
+export function EventDetailsTabs({ eventId }: { eventId: string }) {
   return (
     <Tabs defaultValue="details" className="w-full bg-white p-6 rounded-xl">
       <TabsList className="bg-transparent h-auto p-0 border-b border-gray-200 lg:w-4/12 justify-start rounded-none mb-8 gap-12">
@@ -22,10 +22,10 @@ export function EventDetailsTabs() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="details" className="mt-0 outline-none ring-0">
-        <EventDetailsContent />
+        <EventDetailsContent eventId={eventId} />
       </TabsContent>
       <TabsContent value="history" className="mt-0 outline-none ring-0">
-        <EventTransactionHistory />
+        <EventTransactionHistory eventId={eventId} />
       </TabsContent>
     </Tabs>
   );
