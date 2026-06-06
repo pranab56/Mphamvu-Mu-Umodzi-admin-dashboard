@@ -24,7 +24,7 @@ export const eventApi = baseApi.injectEndpoints({
 
     getAllEvents: builder.query({
       query: ({ status, page }) => ({
-        url: `/events?status=${status}&page=${page}`, // active || completed
+        url: `/events?status=${status}&page=${page}`,
         method: "GET",
       }),
       providesTags: ["event"],
@@ -70,6 +70,23 @@ export const eventApi = baseApi.injectEndpoints({
       }),
       providesTags: ["event"],
     }),
+
+    getUserByEmail: builder.query({
+      query: ({ email }) => ({
+        url: `/events/search-user?email=${email}`,
+        method: "GET",
+      }),
+      providesTags: ["event"],
+    }),
+
+    getUserByEmailId: builder.query({
+      query: ({ userId }) => ({
+        url: `/events/dependents?userId=${userId}`,
+        method: "GET",
+      }),
+      providesTags: ["event"],
+    }),
+
   }),
 });
 
@@ -82,4 +99,6 @@ export const {
   useDeleteEventMutation,
   useUpdateStatusMutation,
   useGetEventAnalysisQuery,
+  useGetUserByEmailQuery,
+  useGetUserByEmailIdQuery,
 } = eventApi;

@@ -1,21 +1,21 @@
 "use client";
 
+import { useGetContributionTrendsQuery, useGetMembershipGrowthQuery, useGetRecentEventsQuery, useOverviewStateQuery } from "@/features/overview/overviewApi";
 import CardStates from "./CardStates";
 import ContributionTrends from "./ContributionTrends";
 import MembershipGrowth from "./MembershipGrowth";
 import RecentEvents from "./RecentEvents";
-import { useGetRecentEventsQuery, useOverviewStateQuery , useGetMembershipGrowthQuery, useGetContributionTrendsQuery } from "@/features/overview/overviewApi";
 
 export default function Overview() {
-  const { data: overviewStateData, isLoading: isOverviewStateLoading} = useOverviewStateQuery(undefined);
+  const { data: overviewStateData, isLoading: isOverviewStateLoading } = useOverviewStateQuery(undefined);
 
-  const {data: recentEventsData, isLoading: isRecentEventsLoading} = useGetRecentEventsQuery(undefined);
+  const { data: recentEventsData, isLoading: isRecentEventsLoading } = useGetRecentEventsQuery(undefined);
 
-  const {data: membershipGrowthData, isLoading: isMembershipGrowthLoading} = useGetMembershipGrowthQuery(undefined);
+  const { data: membershipGrowthData, isLoading: isMembershipGrowthLoading } = useGetMembershipGrowthQuery(undefined);
 
-  const {data: contributionTrendsData, isLoading: isContributionTrendsLoading} = useGetContributionTrendsQuery(undefined);
+  const { data: contributionTrendsData, isLoading: isContributionTrendsLoading } = useGetContributionTrendsQuery(undefined);
 
-  
+
   return (
     <div className="py-6 space-y-8">
 

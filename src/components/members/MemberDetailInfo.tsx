@@ -8,7 +8,7 @@ interface MemberDetailInfoProps {
   userName?: string;
 }
 
-export function MemberDetailInfo({ userId: _userId, userName }: MemberDetailInfoProps) {
+export function MemberDetailInfo({ userName }: MemberDetailInfoProps) {
   return (
     <div className="space-y-12">
       {/* Header */}

@@ -1,15 +1,15 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { motion } from "framer-motion";
-import { Users, Calendar, DollarSign, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { AlertCircle, Calendar, DollarSign, Users } from "lucide-react";
 
 interface CardStateData {
-  totalUser: number;
-  totalEvents: number;
-  totalContribution: number;
-  totalPendingPayments?: number;
+  totalMembers: number;
+  activeEvents: number;
+  totalCollected: number;
+  pendingPayments?: number;
 }
 
 interface CardStatesProps {
@@ -19,33 +19,33 @@ interface CardStatesProps {
 
 export default function CardStates({ data, isLoading }: CardStatesProps) {
   const stats = [
-    { 
-      title: "Total Members", 
-      value: isLoading ? "..." : (data?.totalUser?.toString() || "0"), 
-      icon: Users, 
-      color: "text-[#22C55E]", 
-      iconBg: "bg-[#DCFCE7]" 
+    {
+      title: "Total Members",
+      value: isLoading ? "..." : (data?.totalMembers?.toString() || "0"),
+      icon: Users,
+      color: "text-[#22C55E]",
+      iconBg: "bg-[#DCFCE7]"
     },
-    { 
-      title: "Total Events", 
-      value: isLoading ? "..." : (data?.totalEvents?.toString() || "0"), 
-      icon: Calendar, 
-      color: "text-[#2563EB]", 
-      iconBg: "bg-[#DBEAFE]" 
+    {
+      title: "Total Events",
+      value: isLoading ? "..." : (data?.activeEvents?.toString() || "0"),
+      icon: Calendar,
+      color: "text-[#2563EB]",
+      iconBg: "bg-[#DBEAFE]"
     },
-    { 
-      title: "Total Collected", 
-      value: isLoading ? "..." : `MK ${(data?.totalContribution || 0).toLocaleString()}`, 
-      icon: DollarSign, 
-      color: "text-[#16A34A]", 
-      iconBg: "bg-[#DCFCE7]" 
+    {
+      title: "Total Collected",
+      value: isLoading ? "..." : `MK ${(data?.totalCollected || 0).toLocaleString()}`,
+      icon: DollarSign,
+      color: "text-[#16A34A]",
+      iconBg: "bg-[#DCFCE7]"
     },
-    { 
-      title: "Pending Payments", 
-      value: isLoading ? "..." : `MK ${(data?.totalPendingPayments || 0).toLocaleString()}`, 
-      icon: AlertCircle, 
-      color: "text-[#CA8A04]", 
-      iconBg: "bg-[#FEF9C3]" 
+    {
+      title: "Pending Payments",
+      value: isLoading ? "..." : `MK ${(data?.pendingPayments || 0).toLocaleString()}`,
+      icon: AlertCircle,
+      color: "text-[#CA8A04]",
+      iconBg: "bg-[#FEF9C3]"
     },
   ];
   return (

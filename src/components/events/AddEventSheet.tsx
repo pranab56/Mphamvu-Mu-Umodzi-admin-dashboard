@@ -1,25 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Plus, Image as ImageIcon, Calendar as CalendarIcon, MapPin, Upload, Loader2 } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Image as ImageIcon, Loader2, MapPin, Plus, Upload } from "lucide-react";
 import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
+import * as z from "zod";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -27,12 +23,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreateEventMutation, useGetUserByEmailIdQuery, useGetUserByEmailQuery, useUpdateEventMutation } from "@/features/event/eventApi";
 import { useGetAllEventTypesQuery } from "@/features/event/eventTypesApi";
-import { useCreateEventMutation, useUpdateEventMutation } from "@/features/event/eventApi";
+import { baseURL } from '../../utils/BaseURL';
 
 const eventSchema = z.object({
   eventName: z.string().min(1, "Event name is required"),
@@ -42,12 +43,12 @@ const eventSchema = z.object({
   targetContribution: z.string().min(1, "Target contribution is required"),
   deadline: z.date({ message: "A deadline is required" }),
   coverImage: z.any().optional(),
-  beneficiaryName: z.string().min(1, "Beneficiary name is required"),
+  beneficiaryName: z.string().optional(),
   relationship: z.string().min(1, "Relationship is required"),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
-  contactNumber: z.string().min(1, "Contact number is required"),
-  countryCode: z.string().min(1, "Country code is required"),
-  address: z.string().min(1, "Address is required"),
+  contactNumber: z.string().optional(),
+  countryCode: z.string().optional(),
+  address: z.string().optional(),
   profileImage: z.any().optional(),
   documents: z.any().optional(),
   fundReason: z.string().min(1, "Fund reason is required"),
@@ -58,6 +59,14 @@ type EventFormValues = z.infer<typeof eventSchema>;
 interface EventType {
   _id: string;
   name: string;
+}
+
+interface Dependent {
+  _id: string;
+  name: string;
+  relationship: string;
+  phoneNumber?: string;
+  countryCode?: string;
 }
 
 interface AddEventSheetProps {
@@ -89,11 +98,27 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
   const [isOpen, setIsOpen] = useState(false);
   const isEdit = mode === "edit";
 
-  const { data: eventTypesResponse } = useGetAllEventTypesQuery(undefined);
+  const { data: eventTypeResponse, isLoading: isEventTypesLoading } = useGetAllEventTypesQuery(undefined);
   const [createEvent, { isLoading: isCreating }] = useCreateEventMutation();
   const [updateEvent, { isLoading: isUpdating }] = useUpdateEventMutation();
 
-  const eventTypes = eventTypesResponse?.data || [];
+  const [emailSearch, setEmailSearch] = useState("");
+  const [selectedDependentId, setSelectedDependentId] = useState<string | null>(null);
+
+  const { data: userData } = useGetUserByEmailQuery(
+    { email: emailSearch },
+    { skip: !emailSearch || !emailSearch.includes("@") }
+  );
+
+  const foundUser = userData?.data?.[0];
+
+  const { data: dependentsData, isFetching: isFetchingDependents } = useGetUserByEmailIdQuery(
+    { userId: foundUser?._id },
+    { skip: !foundUser?._id }
+  );
+
+  const dependents = dependentsData?.data || [];
+  const eventTypes = eventTypeResponse?.data || [];
 
   const {
     register,
@@ -110,6 +135,56 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
       countryCode: "+880",
     }
   });
+
+  const relationship = watch("relationship");
+  const emailField = watch("email");
+
+  // Trigger search when email field changes (you might want to debounce this)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (emailField && emailField.includes("@")) {
+        setEmailSearch(emailField);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [emailField]);
+
+  // Auto-fill when user is found and relationship is Member (User)
+  useEffect(() => {
+    if (foundUser && relationship === "User") {
+      setValue("beneficiaryName", foundUser.name || "");
+      setValue("address", foundUser.address || "");
+      setValue("countryCode", foundUser.countryCode || "+880");
+      if (foundUser.image) {
+        setValue("profileImage", foundUser.image);
+      }
+    }
+  }, [foundUser, relationship, setValue]);
+
+  // Handle dependent selection
+  const handleDependentSelect = (depId: string) => {
+    const dep = dependents.find((d: Dependent) => d._id === depId);
+    if (dep) {
+      setSelectedDependentId(depId);
+      setValue("beneficiaryName", dep.name || "");
+      setValue("contactNumber", dep.phoneNumber || "");
+      setValue("countryCode", dep.countryCode || "+880");
+      setValue("address", foundUser?.address || ""); // Usually same address or keep as is
+    }
+  };
+
+  // Reset dependent selection if relationship changes back to User
+  useEffect(() => {
+    if (relationship === "User") {
+      setSelectedDependentId(null);
+    }
+  }, [relationship]);
+
+  const isBeneficiaryLocked = (relationship === "User" && !!foundUser) || (relationship === "Dependent" && !!selectedDependentId);
+  const isDataMissing = (relationship === "User" && !foundUser) || (relationship === "Dependent" && !selectedDependentId);
+
+  // If data is not found (isDataMissing), fields should be disabled as per requirement
+  const isFieldDisabled = isBeneficiaryLocked || isDataMissing;
 
   // Populate data when editing
   useEffect(() => {
@@ -137,7 +212,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
   const onSubmit = async (data: EventFormValues) => {
     try {
       const formData = new FormData();
-      
+
       const eventPayload = {
         name: data.eventName,
         eventTypeId: data.eventTypeId,
@@ -159,7 +234,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
       };
 
       formData.append("data", JSON.stringify(eventPayload));
-      
+
       // Append banner file if present and it's a FileList (new upload)
       if (data.coverImage instanceof FileList && data.coverImage[0]) {
         formData.append("banner", data.coverImage[0]);
@@ -213,7 +288,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
       <SheetContent className="sm:max-w-[700px] p-0 border-l-0 bg-[#F9FAFB]">
         <ScrollArea className="h-full">
           <form onSubmit={handleSubmit(onSubmit)} className="p-8">
-            <SheetHeader className="mb-8 p-0">
+            <SheetHeader className="mb-0 p-0">
               <SheetTitle className="text-2xl font-medium text-gray-900">
                 {isEdit ? "Edit Event" : "Create a New Event"}
               </SheetTitle>
@@ -242,7 +317,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                       render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger className={cn("h-12 w-full py-6 bg-white border-gray-200 rounded-xl shadow-sm", errors.eventTypeId && "border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.2)]")}>
-                            <SelectValue placeholder="Select event type" />
+                            <SelectValue placeholder={isEventTypesLoading ? "Loading types..." : "Select event type"} />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-gray-100 shadow-xl">
                             {eventTypes.map((type: EventType) => (
@@ -377,16 +452,19 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                 <h3 className="text-xl font-medium text-[#8B2F0E] tracking-tight">Beneficiary Details</h3>
                 <div className="bg-primary/5 p-8 rounded-2xl border border-primary/20 space-y-8 shadow-sm">
                   <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Full Name</Label>
+
+
+                    <div className="space-y-2 col-span-2">
+                      <Label className="text-sm font-medium text-gray-700">Email Address</Label>
                       <Input
-                        {...register("beneficiaryName")}
-                        placeholder="Enter full name"
-                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.beneficiaryName && "border-red-500")}
+                        {...register("email")}
+                        placeholder="Enter email address"
+                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.email && "border-red-500")}
                       />
-                      {errors.beneficiaryName && <p className="text-red-500 text-xs mt-1 font-medium">{errors.beneficiaryName.message}</p>}
+                      {errors.email && <p className="text-red-500 text-xs mt-1 font-medium">{errors.email.message}</p>}
                     </div>
-                    <div className="space-y-2">
+
+                    <div className="space-y-2 col-span-2">
                       <Label className="text-sm font-medium text-gray-700">Relationship</Label>
                       <Controller
                         name="relationship"
@@ -397,31 +475,56 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                               <SelectValue placeholder="Select relationship" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                              <SelectItem value="Member">Member</SelectItem>
-                              <SelectItem value="Spouse">Spouse</SelectItem>
-                              <SelectItem value="Child">Child</SelectItem>
-                              <SelectItem value="User">User</SelectItem>
+                              <SelectItem value="User">Member</SelectItem>
+                              <SelectItem value="Dependent">Dependent</SelectItem>
                             </SelectContent>
                           </Select>
                         )}
                       />
                       {errors.relationship && <p className="text-red-500 text-xs mt-1 font-medium">{errors.relationship.message}</p>}
                     </div>
+
+                    {relationship === "Dependent" && foundUser && (
+                      <div className="space-y-2 col-span-2 animate-in fade-in slide-in-from-top-2">
+                        <Label className="text-sm font-medium text-[#8B2F0E]">Select Dependent</Label>
+                        <Select onValueChange={handleDependentSelect} value={selectedDependentId || ""}>
+                          <SelectTrigger className="h-12 w-full bg-white py-6 border-primary/20 rounded-xl shadow-sm border-2">
+                            <SelectValue placeholder={isFetchingDependents ? "Loading dependents..." : "Choose a dependent"} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {dependents.map((dep: Dependent) => (
+                              <SelectItem key={dep._id} value={dep._id}>
+                                {dep.name} ({dep.relationship})
+                              </SelectItem>
+                            ))}
+                            {dependents.length === 0 && !isFetchingDependents && (
+                              <div className="p-2 text-sm text-gray-500 text-center">No dependents found</div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">Email Address</Label>
+                      <Label className="text-sm font-medium text-gray-700">Full Name</Label>
                       <Input
-                        {...register("email")}
-                        placeholder="Enter email address"
-                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.email && "border-red-500")}
+                        {...register("beneficiaryName")}
+                        placeholder="Enter full name"
+                        disabled={isFieldDisabled}
+                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm disabled:opacity-75 disabled:bg-gray-50", errors.beneficiaryName && "border-red-500")}
                       />
-                      {errors.email && <p className="text-red-500 text-xs mt-1 font-medium">{errors.email.message}</p>}
+                      {errors.beneficiaryName && <p className="text-red-500 text-xs mt-1 font-medium">{errors.beneficiaryName.message}</p>}
                     </div>
+
+
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Contact Number</Label>
                       <Input
                         {...register("contactNumber")}
                         placeholder="Enter contact number"
-                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.contactNumber && "border-red-500")}
+                        disabled={isFieldDisabled}
+                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm disabled:opacity-75 disabled:bg-gray-50", errors.contactNumber && "border-red-500")}
                       />
                       {errors.contactNumber && <p className="text-red-500 text-xs mt-1 font-medium">{errors.contactNumber.message}</p>}
                     </div>
@@ -430,7 +533,8 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                       <Input
                         {...register("countryCode")}
                         placeholder="+880"
-                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.countryCode && "border-red-500")}
+                        disabled={isFieldDisabled}
+                        className={cn("h-12 bg-white border-gray-200 rounded-xl shadow-sm disabled:opacity-75 disabled:bg-gray-50", errors.countryCode && "border-red-500")}
                       />
                       {errors.countryCode && <p className="text-red-500 text-xs mt-1 font-medium">{errors.countryCode.message}</p>}
                     </div>
@@ -440,7 +544,8 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                         <Input
                           {...register("address")}
                           placeholder="Enter address"
-                          className={cn("h-12 pr-12 bg-white border-gray-200 rounded-xl shadow-sm", errors.address && "border-red-500")}
+                          disabled={isFieldDisabled}
+                          className={cn("h-12 pr-12 bg-white border-gray-200 rounded-xl shadow-sm disabled:opacity-75 disabled:bg-gray-50", errors.address && "border-red-500")}
                         />
                         <MapPin className="w-5 h-5 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2" />
                       </div>
@@ -452,9 +557,10 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Beneficiary Image</Label>
                       <div
-                        onClick={() => document.getElementById("profile-upload")?.click()}
+                        onClick={() => !isFieldDisabled && document.getElementById("profile-upload")?.click()}
                         className={cn(
-                          "border border-dashed border-gray-200 rounded-xl bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 h-32 relative overflow-hidden transition-all shadow-sm",
+                          "border border-dashed border-gray-200 rounded-xl bg-white flex flex-col items-center justify-center h-32 relative overflow-hidden transition-all shadow-sm",
+                          isFieldDisabled ? "cursor-not-allowed opacity-75 grayscale-[0.5]" : "cursor-pointer hover:bg-gray-50",
                           errors.profileImage && "border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.5)]"
                         )}
                       >
@@ -463,9 +569,24 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                           id="profile-upload"
                           accept="image/*"
                           className="hidden"
+                          disabled={isFieldDisabled}
                           onChange={(e) => setValue("profileImage", e.target.files)}
                         />
-                        {getPreview(profileImage) ? (
+                        {profileImage && typeof profileImage === 'string' ? (
+                          <div className="relative w-full h-full group">
+                            <Image
+                              src={baseURL + profileImage}
+                              alt="Profile"
+                              fill
+                              className="object-cover"
+                            />
+                            {!isFieldDisabled && (
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Upload className="w-5 h-5 text-white" />
+                              </div>
+                            )}
+                          </div>
+                        ) : getPreview(profileImage) ? (
                           <div className="relative w-full h-full group">
                             <Image
                               src={getPreview(profileImage)!}
@@ -473,14 +594,18 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                               fill
                               className="object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Upload className="w-5 h-5 text-white" />
-                            </div>
+                            {!isFieldDisabled && (
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Upload className="w-5 h-5 text-white" />
+                                </div>
+                              )}
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-1">
                             <Upload className="w-5 h-5 text-gray-400" />
-                            <span className="text-xs text-gray-400 font-medium">Upload profile</span>
+                            <span className="text-xs text-gray-400 font-medium">
+                              {isFieldDisabled ? "Image linked to profile" : "Upload profile"}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -489,9 +614,10 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-gray-700">Verification Documents</Label>
                       <div
-                        onClick={() => document.getElementById("doc-upload")?.click()}
+                        onClick={() => !isFieldDisabled && document.getElementById("doc-upload")?.click()}
                         className={cn(
-                          "border border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 h-32 transition-all shadow-sm",
+                          "border border-dashed border-gray-200 rounded-xl bg-white p-6 flex flex-col items-center justify-center gap-2 h-32 transition-all shadow-sm",
+                          isFieldDisabled ? "cursor-not-allowed opacity-75" : "cursor-pointer hover:bg-gray-50",
                           errors.documents && "border-red-500 shadow-[0_0_0_1px_rgba(239,68,68,0.5)]"
                         )}
                       >
@@ -500,11 +626,12 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                           id="doc-upload"
                           multiple
                           className="hidden"
+                          disabled={isFieldDisabled}
                           onChange={(e) => setValue("documents", e.target.files)}
                         />
                         <Upload className={cn("w-5 h-5 text-gray-400 transition-colors", documents?.[0] && "text-primary")} />
                         <span className="text-xs text-gray-400 text-center font-medium px-2">
-                          {documents?.[0] ? `${documents.length} file(s) selected` : "Upload NID, medical papers etc."}
+                          {isFieldDisabled ? "Documents linked" : (documents?.[0] ? `${documents.length} file(s) selected` : "Upload NID, medical papers etc.")}
                         </span>
                       </div>
                       {errors.documents && <p className="text-red-500 text-xs mt-1 font-medium">{errors.documents.message?.toString()}</p>}

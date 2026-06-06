@@ -1,18 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle2, FileText, MapPin, Phone, Mail, Edit2, Loader2, Calendar } from "lucide-react";
-import { ActionModal } from "../members/ActionModals";
-import { useGetSingleEventQuery, useUpdateStatusMutation, useDeleteEventMutation } from "@/features/event/eventApi";
-import { format, differenceInDays } from "date-fns";
-import { baseURL } from "@/utils/BaseURL";
-import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { AddEventSheet } from "./AddEventSheet";
+import { Progress } from "@/components/ui/progress";
+import { useDeleteEventMutation, useGetSingleEventQuery, useUpdateStatusMutation } from "@/features/event/eventApi";
 import { cn } from "@/lib/utils";
+import { baseURL } from "@/utils/BaseURL";
+import { differenceInDays, format } from "date-fns";
+import { Calendar, CheckCircle2, Clock, Edit2, FileText, Loader2, Mail, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import { ActionModal } from "../members/ActionModals";
+import { AddEventSheet } from "./AddEventSheet";
 
 interface EventDetailsContentProps {
   eventId: string;
@@ -26,6 +26,7 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
 
   const event = eventResponse?.data;
   const beneficiary = event?.beneficiary;
+
 
   if (isLoading) {
     return (
@@ -66,11 +67,10 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
     }
   };
 
-  const daysRemaining = event.eventDeadline 
-    ? Math.max(0, differenceInDays(new Date(event.eventDeadline), new Date())) 
+  const daysRemaining = event.eventDeadline
+    ? Math.max(0, differenceInDays(new Date(event.eventDeadline), new Date()))
     : 0;
 
-  const participationPercent = event.participation || 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -92,8 +92,8 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
             <h2 className="text-3xl font-medium text-gray-900 tracking-tight">{event.name}</h2>
             <Badge className={cn(
               "border-none shadow-none px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest",
-              event.status === "active" ? "bg-green-100 text-green-700" : 
-              event.status === "completed" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"
+              event.status === "active" ? "bg-green-100 text-green-700" :
+                event.status === "completed" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-700"
             )}>
               {event.status}
             </Badge>
@@ -158,21 +158,21 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
             <div className="flex justify-between items-end">
               <div>
                 <span className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1 block">Community Progress</span>
-                <span className="text-3xl font-bold text-gray-900">{participationPercent}%</span>
+                <span className="text-3xl font-bold text-gray-900">{event?.participationPercentage}%</span>
               </div>
-              <p className="text-sm text-gray-400 font-medium">38 of 45 members participated</p>
+              <p className="text-sm text-gray-400 font-medium">{event?.paidMembers}{event?.participantsCount} of {event?.totalMembers} members participated</p>
             </div>
-            <Progress value={participationPercent} className="h-3 bg-gray-100 text-[#8B2F0E]" />
+            <Progress value={event?.participationPercentage} className="h-3 bg-gray-100 text-[#8B2F0E]" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 border-t border-gray-50">
             <div className="p-4 rounded-xl hover:bg-gray-50 transition-colors">
               <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Total Contributions</span>
-              <span className="text-3xl font-bold text-[#16A34A]">$ {event.totalContributions?.toLocaleString() || "0.00"}</span>
+              <span className="text-3xl font-bold text-[#16A34A]">$ {event.totalCollected?.toLocaleString() || "0.00"}</span>
             </div>
             <div className="p-4 rounded-xl hover:bg-gray-50 transition-colors">
-              <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Beneficiary Share (90%)</span>
-              <span className="text-3xl font-bold text-[#8B2F0E]">$ {((event.totalContributions || 0) * 0.9).toLocaleString()}</span>
+              <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block mb-2">Beneficiary Share ({event?.beneficiarySharePercent}%)</span>
+              <span className="text-3xl font-bold text-[#8B2F0E]">$ {((event.beneficiaryShareAmount || 0) * 0.9).toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -186,7 +186,7 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
           <div className="flex gap-8 items-start w-full">
             <div className="relative w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-lg shrink-0 -rotate-3 hover:rotate-0 transition-transform duration-500">
               <Image
-                src={beneficiary?.image || "https://avatar.iran.liara.run/public/boy?username=John"}
+                src={baseURL + "/" + beneficiary?.image || "https://avatar.iran.liara.run/public/boy?username=John"}
                 alt={beneficiary?.name || "Beneficiary"}
                 fill
                 className="object-cover"
@@ -216,14 +216,14 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
                 </div>
                 <div className="flex flex-wrap gap-3 mt-8">
                   {beneficiary?.documents?.map((doc: string, idx: number) => (
-                    <a 
+                    <a
                       key={idx}
                       href={doc.startsWith("http") ? doc : `${baseURL}${doc}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 bg-white px-5 py-2.5 rounded-xl border border-gray-100 text-sm font-bold text-gray-700 hover:bg-gray-100 hover:text-primary transition-all shadow-sm"
                     >
-                      <FileText className="w-4 h-4" /> 
+                      <FileText className="w-4 h-4" />
                       Document {idx + 1}
                     </a>
                   ))}
@@ -246,7 +246,7 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
 
         {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-center lg:justify-end gap-5 mt-16 pt-8 border-t border-gray-50">
-          <AddEventSheet 
+          <AddEventSheet
             mode="edit"
             initialData={event}
             trigger={
@@ -256,13 +256,13 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
               </Button>
             }
           />
-          
+
           <ActionModal
             type="markComplete"
             isLoading={isUpdating}
             onConfirm={() => handleStatusUpdate("completed")}
             trigger={
-              <Button 
+              <Button
                 disabled={event.status === "completed"}
                 className="h-14 px-10 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg shadow-green-600/20 transition-all active:scale-95 disabled:opacity-50"
               >
@@ -270,13 +270,13 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
               </Button>
             }
           />
-          
+
           <ActionModal
             type="closeEvent"
             isLoading={isUpdating}
             onConfirm={() => handleStatusUpdate("inactive")}
             trigger={
-              <Button 
+              <Button
                 disabled={event.status !== "active"}
                 className="h-14 px-10 rounded-xl bg-[#8B2F0E] hover:bg-[#70260B] text-white font-bold shadow-lg shadow-[#8B2F0E]/20 transition-all active:scale-95 disabled:opacity-50"
               >
@@ -284,7 +284,7 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
               </Button>
             }
           />
-          
+
           <ActionModal
             type="delete"
             isLoading={isDeleting}

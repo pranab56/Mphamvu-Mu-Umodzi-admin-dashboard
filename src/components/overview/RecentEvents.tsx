@@ -1,6 +1,5 @@
 "use client";
 
-import { MoreVertical } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -62,15 +61,14 @@ export default function RecentEvents({ data, isLoading }: RecentEventsProps) {
         <Table>
           <TableHeader className="bg-[#DED2CD]">
             <TableRow className="hover:bg-transparent border-none">
-               <TableHead className="py-4 text-[#1A1C1F] font-bold">Event Name</TableHead>
-               <TableHead className="py-4 text-[#1A1C1F] font-bold">Type</TableHead>
-               <TableHead className="py-4 text-[#1A1C1F] font-bold">Target Amount</TableHead>
-               <TableHead className="py-4 text-[#1A1C1F] font-bold">Status</TableHead>
-               <TableHead className="py-4 text-[#1A1C1F] font-bold text-right pr-6">Action</TableHead>
+              <TableHead className="py-4 text-[#1A1C1F] font-bold">Event Name</TableHead>
+              <TableHead className="py-4 text-[#1A1C1F] font-bold">Type</TableHead>
+              <TableHead className="py-4 text-[#1A1C1F] font-bold">Target Amount</TableHead>
+              <TableHead className="py-4 text-[#1A1C1F] font-bold">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {events.map((event, i) => (
+            {events.slice(0, 5).map((event, i) => (
               <TableRow key={event._id || i} className="hover:bg-gray-50/50 border-b border-gray-100">
                 <TableCell className="py-4 flex flex-col gap-0.5">
                   <span className="font-bold text-[#1A1C1F]">{event.name}</span>
@@ -79,11 +77,6 @@ export default function RecentEvents({ data, isLoading }: RecentEventsProps) {
                 <TableCell className="py-4 text-gray-500 font-semibold">{event.eventType}</TableCell>
                 <TableCell className="py-4 text-[#1A1C1F] font-bold">MK {event.targetContribution?.toLocaleString()}</TableCell>
                 <TableCell className="py-4 text-[#1A1C1F] font-bold capitalize">{event.status}</TableCell>
-                <TableCell className="py-4 text-right pr-6">
-                  <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                    <MoreVertical className="w-5 h-5 text-gray-400" />
-                  </button>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>

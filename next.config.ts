@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "rakibur5005.binarybards.online",
         pathname: "/**",
       },
       {
