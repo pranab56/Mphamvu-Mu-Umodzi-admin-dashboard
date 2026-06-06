@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -141,19 +140,7 @@ export default function LoginPage() {
             {errors.password && <p className="text-red-400 text-xs mt-1 ml-1 font-medium">{errors.password}</p>}
           </div>
 
-          <div className="flex items-center justify-between pb-2">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                className="w-5 h-5 rounded-[6px] border-black/20 data-[state=checked]:bg-[#8B2F0E] data-[state=checked]:border-[#8B2F0E]"
-              />
-              <label
-                htmlFor="remember"
-                className="text-sm font-normal text-black/80 cursor-pointer"
-              >
-                Remember me
-              </label>
-            </div>
+          <div className="flex items-center justify-end w-full pb-2">
             <Link href="/auth/forgot-password" title="Forgot Password?" className="text-sm text-red-500 hover:text-red-400 font-medium transition-colors">
               Forgot Password?
             </Link>

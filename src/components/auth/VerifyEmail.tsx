@@ -32,7 +32,6 @@ export default function VerifyEmail() {
       toast.error('Please enter the complete 4-digit code');
       return;
     }
-
     try {
       const res = await otpCheck({ email: email!, oneTimeCode: parseInt(otp) }).unwrap();
       toast.success(res.message);
@@ -41,9 +40,6 @@ export default function VerifyEmail() {
       const err = error as { data?: { message?: string } };
       toast.error(err?.data?.message || "Verification failed");
     }
-
-
-
   };
 
   const handleResend = () => {
