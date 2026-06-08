@@ -254,12 +254,6 @@ export function UrgentRequestDrawer({ reportId, children }: { reportId: string, 
                   </>
                 )}
               </section>
-
-              <div className="text-center">
-                <button className="text-gray-500 text-xs font-normal underline hover:text-[#8B2F0E]">
-                  Use these information to create a new EVENT
-                </button>
-              </div>
             </div>
           ) : (
             <div className="text-center py-10 text-gray-500">Failed to load report details.</div>

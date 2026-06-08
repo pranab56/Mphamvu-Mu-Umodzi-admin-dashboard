@@ -97,6 +97,7 @@ interface AddEventSheetProps {
 
 export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSheetProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [deadlineTime, setDeadlineTime] = useState("00:00");
   const isEdit = mode === "edit";
 
   const { data: eventTypeResponse, isLoading: isEventTypesLoading } = useGetAllEventTypesQuery(undefined);
@@ -140,6 +141,13 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
   const relationship = watch("relationship");
   const emailField = watch("email");
 
+  // Reset deadline time when sheet closes (for non-edit mode)
+  useEffect(() => {
+    if (!isOpen && !isEdit) {
+      setDeadlineTime("00:00");
+    }
+  }, [isOpen, isEdit]);
+
   // Trigger search when email field changes (you might want to debounce this)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -181,6 +189,18 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
     }
   }, [relationship]);
 
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    setDeadlineTime(newTime);
+    const currentDeadline = watch("deadline");
+    if (currentDeadline) {
+      const [hours, minutes] = newTime.split(":").map(Number);
+      const newDate = new Date(currentDeadline);
+      newDate.setHours(hours, minutes);
+      setValue("deadline", newDate, { shouldValidate: true });
+    }
+  };
+
   const isBeneficiaryLocked = (relationship === "User" && !!foundUser) || (relationship === "Dependent" && !!selectedDependentId);
   const isDataMissing = (relationship === "User" && !foundUser) || (relationship === "Dependent" && !selectedDependentId);
 
@@ -190,13 +210,20 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
   // Populate data when editing
   useEffect(() => {
     if (isEdit && initialData) {
+      const deadlineDate = initialData.eventDeadline ? new Date(initialData.eventDeadline) : new Date();
+
+      // Set time string for the time input
+      const hours = deadlineDate.getHours().toString().padStart(2, "0");
+      const minutes = deadlineDate.getMinutes().toString().padStart(2, "0");
+      setDeadlineTime(`${hours}:${minutes}`);
+
       reset({
         eventName: initialData.name,
         eventTypeId: initialData.eventTypeId,
         description: initialData.description,
         minContribution: initialData.minContribution?.toString(),
         targetContribution: initialData.targetContribution?.toString(),
-        deadline: initialData.eventDeadline ? new Date(initialData.eventDeadline) : new Date(),
+        deadline: deadlineDate,
         beneficiaryName: initialData.beneficiary?.name,
         relationship: initialData.beneficiary?.relationship || "User",
         email: initialData.beneficiary?.email,
@@ -220,7 +247,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
         description: data.description,
         minContribution: Number(data.minContribution),
         targetContribution: Number(data.targetContribution),
-        eventDeadline: data.deadline.toISOString(),
+        eventDeadline: data.deadline.toISOString().replace("Z", "+00:00"),
         beneficiary: {
           userId: foundUser?._id || initialData?.beneficiary?.userId,
           name: data.beneficiaryName,
@@ -409,43 +436,61 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                     </div>
                   </div>
 
-                  <div className="space-y-2 font-poppins">
-                    <Label className="text-sm font-medium text-gray-700 font-inter">Event Deadline</Label>
-                    <Controller
-                      name="deadline"
-                      control={control}
-                      render={({ field }) => (
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className={cn(
-                                "w-full h-12 px-4 text-left font-normal bg-white border-gray-200 rounded-xl justify-between flex items-center shadow-sm",
-                                !field.value && "text-muted-foreground",
-                                errors.deadline && "border-red-500"
-                              )}
-                            >
-                              <span className="font-medium">
-                                {field.value ? format(field.value, "PPP") : "Pick event deadline"}
-                              </span>
-                              <CalendarIcon className="h-5 w-5 text-gray-400" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 rounded-2xl overflow-hidden shadow-2xl border-none" align="end">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                              className="bg-white"
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      )}
-                    />
-                    {errors.deadline && <p className="text-red-500 text-xs mt-1 font-medium">{errors.deadline.message}</p>}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 font-poppins">
+                      <Label className="text-sm font-medium text-gray-700 font-inter">Deadline Date</Label>
+                      <Controller
+                        name="deadline"
+                        control={control}
+                        render={({ field }) => (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                  "w-full h-12 px-4 text-left font-normal bg-white border-gray-200 rounded-xl justify-between flex items-center shadow-sm",
+                                  !field.value && "text-muted-foreground",
+                                  errors.deadline && "border-red-500"
+                                )}
+                              >
+                                <span className="font-medium">
+                                  {field.value ? format(field.value, "PPP") : "Pick date"}
+                                </span>
+                                <CalendarIcon className="h-5 w-5 text-gray-400" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 rounded-2xl overflow-hidden shadow-2xl border-none" align="end">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    const [hours, minutes] = deadlineTime.split(":").map(Number);
+                                    const newDate = new Date(date);
+                                    newDate.setHours(hours, minutes);
+                                    field.onChange(newDate);
+                                  }
+                                }}
+                                initialFocus
+                                className="bg-white"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2 font-poppins">
+                      <Label className="text-sm font-medium text-gray-700 font-inter">Deadline Time</Label>
+                      <Input
+                        type="time"
+                        value={deadlineTime}
+                        onChange={handleTimeChange}
+                        className="h-12 bg-white border-gray-200 rounded-xl shadow-sm"
+                      />
+                    </div>
                   </div>
+                  {errors.deadline && <p className="text-red-500 text-xs mt-1 font-medium">{errors.deadline.message}</p>}
                 </div>
               </section>
 
@@ -597,10 +642,10 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                               className="object-cover"
                             />
                             {!isFieldDisabled && (
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <Upload className="w-5 h-5 text-white" />
-                                </div>
-                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Upload className="w-5 h-5 text-white" />
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="flex flex-col items-center gap-1">
