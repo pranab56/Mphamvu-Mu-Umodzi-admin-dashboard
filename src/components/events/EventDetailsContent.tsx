@@ -66,7 +66,7 @@ export function EventDetailsContent({ eventId }: EventDetailsContentProps) {
       toast.error(error?.data?.message || "Failed to delete event");
     }
   };
-
+  
   const daysRemaining = event.eventDeadline
     ? Math.max(0, differenceInDays(new Date(event.eventDeadline), new Date()))
     : 0;

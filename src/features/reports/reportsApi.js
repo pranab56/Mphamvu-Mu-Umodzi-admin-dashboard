@@ -45,6 +45,7 @@ export const reportsApi = baseApi.injectEndpoints({
 export const {
   useGetEventReportsQuery,
   useGetSingleEventReportsQuery,
+  useLazyGetSingleEventReportsQuery,
   useDeleteSingleEventReportsMutation,
   useReplyEventReportsMutation,
 } = reportsApi;

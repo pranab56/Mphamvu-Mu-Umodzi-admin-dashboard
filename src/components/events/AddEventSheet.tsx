@@ -82,6 +82,7 @@ interface AddEventSheetProps {
     eventDeadline: string;
     banner: string;
     beneficiary: {
+      userId?: string;
       name: string;
       email: string;
       relationship: string;
@@ -221,6 +222,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
         targetContribution: Number(data.targetContribution),
         eventDeadline: data.deadline.toISOString(),
         beneficiary: {
+          userId: foundUser?._id || initialData?.beneficiary?.userId,
           name: data.beneficiaryName,
           email: data.email,
           relationship: data.relationship,
