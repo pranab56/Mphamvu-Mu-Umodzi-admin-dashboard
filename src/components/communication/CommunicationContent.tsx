@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { BroadcastView } from "./BroadcastView";
@@ -38,9 +38,9 @@ export default function CommunicationContent() {
   const { data: profileData } = useGetMyProfileQuery({});
   const userId = profileData?.data?._id;
 
-  const { data: chatsData, isLoading: isChatsLoading } = useGetChatQuery(
+  const { data: chatsData, isLoading: isChatsLoading, refetch: refetchChats } = useGetChatQuery(
     { userId },
-    { skip: !userId }
+    { skip: !userId, pollingInterval: 3000 }
   );
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -49,38 +49,56 @@ export default function CommunicationContent() {
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
   const { data: messagesData } = useGetMessageQuery(
-    { chatId: selectedChatId as string },
-    { skip: !selectedChatId }
+    { chatId: selectedChatId as string, userId },
+    { skip: !selectedChatId || !userId, pollingInterval: 3000 }
   );
+
+  // When new messages arrive, immediately sync the chat list too
+  const prevMessageCountRef = useRef<number>(0);
+  useEffect(() => {
+    const count = messagesData?.data?.messages?.length ?? 0;
+    if (prevMessageCountRef.current > 0 && count > prevMessageCountRef.current) {
+      refetchChats();
+    }
+    prevMessageCountRef.current = count;
+  }, [messagesData, refetchChats]);
 
   const [sendMessage] = useSendMessageMutation();
   const [deleteChat] = useDeleteChatMutation();
 
-  // Map API chats to UI conversations
+  // Map API chats to UI conversations, always sorted by latest activity
   const conversations: Conversation[] = useMemo(() => {
     if (!chatsData?.data?.chats) return [];
-    
-    const mapped = chatsData.data.chats.map((chat: ChatData) => {
-      const otherParticipant = chat.participants.find((p: ChatParticipant) => p._id !== userId) || chat.participants[0];
-      
+
+    const sorted = [...chatsData.data.chats].sort((a: ChatData, b: ChatData) => {
+      if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    });
+
+    const mapped = sorted.map((chat: ChatData) => {
+      const participants = chat.participants ?? [];
+      const otherParticipant = participants[0];
+
       return {
         id: chat._id,
         name: otherParticipant?.name || "Unknown",
         avatar: otherParticipant?.image ? `http://10.10.7.39:5005${otherParticipant.image}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=${otherParticipant?.name}`,
         lastMessage: chat.lastMessage?.message || (chat.lastMessage?.type === 'image' ? "Sent an image" : "No messages yet"),
         timestamp: chat.lastMessageAt ? format(new Date(chat.lastMessageAt), "hh:mm a") : "",
-        unreadCount: chat.unreadCount,
-        messages: [] // Messages are fetched separately
+        unreadCount: chat._id === selectedChatId ? 0 : (chat.unreadCount ?? 0),
+        messages: []
       };
     });
 
     if (!searchQuery) return mapped;
 
-    return mapped.filter((chat: Conversation) => 
-      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    return mapped.filter((chat: Conversation) =>
+      chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [chatsData, userId, searchQuery]);
+  }, [chatsData, userId, searchQuery, selectedChatId]);
 
   // Set initial selected chat
   useEffect(() => {

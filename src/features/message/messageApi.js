@@ -22,10 +22,10 @@ export const messageApi = baseApi.injectEndpoints({
       }),
       providesTags: ["message"],
       async onCacheEntryAdded(
-        { chatId },
+        { chatId, userId },
         { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
       ) {
-        if (!chatId) return;
+        if (!chatId || !userId) return;
         const token = getToken();
         const socket = io(baseURL, {
           auth: {
@@ -33,23 +33,41 @@ export const messageApi = baseApi.injectEndpoints({
           },
         });
 
+        const handleNewMessage = (newMessage) => {
+          // Try to extract chatId from all possible backend field shapes
+          const incomingChatId =
+            newMessage?.chatId?._id ??
+            newMessage?.chatId ??
+            newMessage?.chat?._id ??
+            newMessage?.chat ??
+            null;
+
+          // If backend includes chatId, filter; otherwise accept all (safe for this cache entry)
+          if (incomingChatId && incomingChatId !== chatId) return;
+
+          updateCachedData((draft) => {
+            if (draft?.data?.messages) {
+              // Avoid duplicate messages
+              const alreadyExists = draft.data.messages.some((m) => m._id === newMessage._id);
+              if (!alreadyExists) {
+                draft.data.messages.unshift(newMessage);
+              }
+            }
+          });
+        };
+
         try {
           await cacheDataLoaded;
 
-          socket.on(`newMessage::${chatId}`, (newMessage) => {
-            updateCachedData((draft) => {
-              // The API returns newest first, so we unshift the new message
-              if (draft?.data?.messages) {
-                draft.data.messages.unshift(newMessage);
-              }
-            });
-          });
+          // Listen on userId-based event (primary) AND chatId-based event (fallback)
+          socket.on(`newMessage::${userId}`, handleNewMessage);
+          socket.on(`newMessage::${chatId}`, handleNewMessage);
         } catch {
           // no-op
         }
 
         await cacheEntryRemoved;
-        socket.close();
+        socket.disconnect();
       },
     }),
 
@@ -64,7 +82,6 @@ export const messageApi = baseApi.injectEndpoints({
   }),
 });
 
-// Export hooks
 export const {
   useSendMessageMutation,
   useGetMessageQuery,

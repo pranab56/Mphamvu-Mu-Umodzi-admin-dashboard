@@ -28,30 +28,28 @@ export const chatApi = baseApi.injectEndpoints({
         try {
           await cacheDataLoaded;
 
-          socket.on(`newChat::${userId}`, (newChat) => {
-            updateCachedData((draft) => {
-              if (draft?.data?.chats) {
-                // Add the new chat to the beginning of the list if it doesn't exist
-                if (!draft.data.chats.find(c => c._id === newChat._id)) {
-                  draft.data.chats.unshift(newChat);
-                }
-              }
-            });
-          });
+          // New chats: don't add from socket (may lack participant names).
+          // The 5s polling will fetch complete data.
+          socket.on(`newChat::${userId}`, () => {});
 
           socket.on(`chatListUpdate::${userId}`, (updatedChat) => {
             updateCachedData((draft) => {
               if (draft?.data?.chats) {
                 const index = draft.data.chats.findIndex(c => c._id === updatedChat._id);
                 if (index !== -1) {
-                  // Update existing chat and move to top
-                  draft.data.chats[index] = { ...draft.data.chats[index], ...updatedChat };
+                  const existingChat = draft.data.chats[index];
+                  // Only update safe fields — NEVER touch participants (prevents "Unknown" flash)
+                  draft.data.chats[index] = {
+                    ...existingChat,
+                    lastMessage: updatedChat.lastMessage ?? existingChat.lastMessage,
+                    lastMessageAt: updatedChat.lastMessageAt ?? existingChat.lastMessageAt,
+                    unreadCount: updatedChat.unreadCount ?? existingChat.unreadCount,
+                    isRead: updatedChat.isRead ?? existingChat.isRead,
+                  };
                   const [item] = draft.data.chats.splice(index, 1);
                   draft.data.chats.unshift(item);
-                } else {
-                  // If not found, add it
-                  draft.data.chats.unshift(updatedChat);
                 }
+                // Unknown chat: skip — polling will fetch with full participant data
               }
             });
           });

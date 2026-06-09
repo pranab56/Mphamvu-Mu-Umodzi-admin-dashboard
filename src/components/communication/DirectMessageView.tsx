@@ -134,8 +134,10 @@ export function DirectMessageView({
             <ScrollArea className="flex-1 p-6 min-h-0">
               <div className="space-y-3 pb-4">
                 {conversations.map((chat) => (
-                  <div
+                  <motion.div
                     key={chat.id}
+                    layout
+                    transition={{ duration: 0.25, ease: "easeInOut" }}
                     onClick={() => onSelectChatAction(chat)}
                     className={cn(
                       "p-4 rounded-2xl cursor-pointer border border-gray-200 flex items-center gap-4 relative group",
@@ -202,7 +204,7 @@ export function DirectMessageView({
                         <span className="text-gray-400 text-xs shrink-0">{chat.timestamp}</span>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </ScrollArea>
