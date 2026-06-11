@@ -99,11 +99,11 @@ export function DirectMessageView({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-medium text-[#1A1C21]">Direct Message</h2>
-        <p className="text-[#64748B] text-base">Communicate one-on-one with individual members</p>
+      <div className="space-y-1 sm:space-y-2">
+        <h2 className="text-xl sm:text-2xl font-medium text-[#1A1C21]">Direct Message</h2>
+        <p className="text-[#64748B] text-sm sm:text-base">Communicate one-on-one with individual members</p>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[800px] max-h-[800px] overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 h-[560px] sm:h-[680px] lg:h-[800px] max-h-[800px] overflow-hidden">
         {/* Sidebar - Conversations List */}
 
         <div className={cn(

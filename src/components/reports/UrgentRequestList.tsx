@@ -11,7 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { useGetEventReportsQuery, useGetSingleEventReportsQuery, useReplyEventReportsMutation } from "@/features/reports/reportsApi";
+import { useGetUrgentRequestsQuery, useGetSingleEventReportsQuery, useReplyEventReportsMutation } from "@/features/reports/reportsApi";
 import { Calendar as CalendarIcon, FileText, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ interface EventReport {
 
 export function UrgentRequestList() {
   const router = useRouter();
-  const { data: reportsData, isLoading } = useGetEventReportsQuery({ page: 1 });
+  const { data: reportsData, isLoading } = useGetUrgentRequestsQuery({ page: 1 });
   const reports: EventReport[] = reportsData?.data || [];
 
   if (isLoading) {

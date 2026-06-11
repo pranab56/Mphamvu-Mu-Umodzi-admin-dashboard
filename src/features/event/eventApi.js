@@ -86,8 +86,8 @@ export const eventApi = baseApi.injectEndpoints({
       }),
       providesTags: ["event"],
     }),
-
   }),
+  overrideExisting: true
 });
 
 export const {

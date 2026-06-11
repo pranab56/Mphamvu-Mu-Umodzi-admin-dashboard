@@ -21,6 +21,15 @@ export const createAdminApi = baseApi.injectEndpoints({
       invalidatesTags: ["createAdmin"],
     }),
 
+    updateMemberByAdmin: builder.mutation({
+      query: ({ data, id }) => ({
+        url: `/user-managements/update-profile-by-admin/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["createAdmin"],
+    }),
+
     deleteMember: builder.mutation({
       query: ({ id }) => ({
         url: `/team-members/delete/${id}`,
@@ -45,4 +54,5 @@ export const {
   useUpdateMemberMutation,
   useDeleteMemberMutation,
   useGetAllAdminsQuery,
+  useUpdateMemberByAdminMutation,
 } = createAdminApi;

@@ -1,17 +1,16 @@
 "use client";
 
-import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, Clock, AlertTriangle, Loader2, Ban } from "lucide-react";
-import Image from "next/image";
-import { Badge } from "../ui/badge";
-import { 
-  useGetCompleteContributionQuery, 
-  useGetInPendingContributionQuery, 
-  useGetTotalDueQuery 
+import {
+  useGetCompleteContributionQuery,
+  useGetInPendingContributionQuery,
+  useGetTotalDueQuery
 } from "@/features/members/membersApi";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { AlertTriangle, Ban, Calculator, CheckCircle2, Clock, Loader2, ReceiptText, ShieldAlert, Wallet } from "lucide-react";
+import Image from "next/image";
+import { Badge } from "../ui/badge";
 
 interface UserData {
   name?: string;
@@ -59,6 +58,7 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
   const { data: pendingResponse, isLoading: isPendingLoading } = useGetInPendingContributionQuery({ userId });
   const { data: totalDueResponse, isLoading: isTotalDueLoading } = useGetTotalDueQuery({ userId });
 
+
   const completedContributions = completedResponse?.data || [];
   const pendingContributions = pendingResponse?.data || [];
   const outstandingDues = totalDueResponse?.data?.breakdown || [];
@@ -66,6 +66,7 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
 
   const isSuspended = userData?.isSuspended;
   const status = isSuspended ? "Suspended" : ((userData?.status?.charAt(0).toUpperCase() ?? "") + (userData?.status?.slice(1) ?? "") || "Active");
+
 
   const getStatusStyles = (status: string) => {
     switch (status) {
@@ -80,9 +81,9 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
     <div className="bg-white shadow-sm rounded-xl p-6">
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 relative overflow-hidden group">
         <div className="flex items-center gap-8 relative z-10">
-          <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-white shadow-sm">
+          <div className="relative w-28 h-28 rounded-full overflow-hidden border-1 border-gray-200 shadow-sm">
             <Image
-              src={userData?.image || "/member_avatar.png"}
+              src={userData?.image || "https://img.magnific.com/premium-vector/user-profile-icon-circle_1256048-12499.jpg?semt=ais_hybrid&w=740&q=80"}
               alt="Profile"
               fill
               className="object-cover"
@@ -158,7 +159,7 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
               </div>
             ))
           ) : (
-            <EmptyState 
+            <EmptyState
               image="/images/notFound/success.png"
               title="No Completed Contributions"
               description="This user has not registered any payment. Nothing is completed at the moment."
@@ -189,7 +190,7 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
               </div>
             ))
           ) : (
-            <EmptyState 
+            <EmptyState
               image="/images/notFound/warning.png"
               title="No Pending Contributions"
               description="This user has completed all required contributions. Nothing is pending at the moment."
@@ -200,58 +201,83 @@ export function MemberDetailTabs({ userId, userData }: MemberDetailTabsProps) {
         <TabsContent value="total-dues" className="outline-none space-y-6">
           {isTotalDueLoading ? (
             <LoadingState />
-          ) : outstandingDues.length > 0 ? (
+          ) : (
             <div className="space-y-6">
-              {outstandingDues.map((item: DueContribution) => (
-                <div key={item.contributionId} className="bg-white/80 border border-gray-100 p-6 rounded-xl group hover:bg-white hover:shadow-sm transition-all duration-200">
-                  <div className="flex justify-between">
-                    <div className="flex gap-6">
-                      <div className="mt-1 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5 text-red-500" />
-                      </div>
-                      <div className="space-y-1">
-                        <h4 className="text-xl font-medium text-gray-800 tracking-tight">{item.eventName}</h4>
-                        <p className="text-sm text-gray-400 mt-2 font-normal">Deadline Passed: {item.deadline ? format(new Date(item.deadline), "MMMM d, yyyy") : "N/A"}</p>
-                      </div>
-                    </div>
-                    <span className="text-2xl font-bold text-red-500 tracking-tighter">$ {item.totalDue?.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-dashed border-gray-100 italic">
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>Base: ${item.minContribution}</span>
-                      <span>Penalty: ${item.penaltyFee}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
               {dueSummary && (
-                <div className="bg-[#8B2F0E] text-white p-8 rounded-2xl shadow-xl shadow-[#8B2F0E]/10">
-                  <h5 className="text-lg font-medium opacity-80 mb-6 uppercase tracking-widest">Dues Summary</h5>
-                  <div className="space-y-4">
-                    <div className="flex justify-between text-xl font-normal border-b border-white/10 pb-4">
-                      <span>Total Event Dues</span>
-                      <span>$ {dueSummary.totalEventDues?.toFixed(2)}</span>
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                      <ReceiptText className="w-5 h-5 text-orange-500" />
                     </div>
-                    <div className="flex justify-between text-xl font-normal border-b border-white/10 pb-4">
-                      <span>Penalty Fees</span>
-                      <span>$ {dueSummary.totalPenaltyFee?.toFixed(2)}</span>
+                    <div>
+                      <p className="text-sm text-gray-400 font-normal">Total Event Dues</p>
+                      <p className="text-xl font-bold text-gray-800 tracking-tight">$ {dueSummary.totalEventDues?.toFixed(2)}</p>
                     </div>
-                    <div className="flex justify-between items-center pt-6">
-                      <span className="text-2xl font-bold uppercase tracking-tight">Grand Total</span>
-                      <span className="text-4xl font-extrabold tracking-tighter">$ {dueSummary.grandTotal?.toFixed(2)}</span>
+                  </div>
+
+                  <div className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                      <ShieldAlert className="w-5 h-5 text-red-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 font-normal">Total Penalty Fee</p>
+                      <p className="text-xl font-bold text-gray-800 tracking-tight">$ {dueSummary.totalPenaltyFee?.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+                    <div className="w-11 h-11 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                      <Wallet className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400 font-normal">Wallet Penalty</p>
+                      <p className="text-xl font-bold text-gray-800 tracking-tight">$ {dueSummary.walletPenaltyAmount?.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#8B2F0E] rounded-xl p-5 flex items-center gap-4 shadow-sm shadow-[#8B2F0E]/20">
+                    <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <Calculator className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-white/70 font-normal">Grand Total</p>
+                      <p className="text-xl font-bold text-white tracking-tight">$ {dueSummary.grandTotal?.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
               )}
+
+              {outstandingDues.length > 0 ? (
+                outstandingDues.map((item: DueContribution) => (
+                  <div key={item.contributionId} className="bg-white/80 border border-gray-100 p-6 rounded-xl group hover:bg-white hover:shadow-sm transition-all duration-200">
+                    <div className="flex justify-between">
+                      <div className="flex gap-6">
+                        <div className="mt-1 w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                          <AlertTriangle className="w-5 h-5 text-red-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="text-xl font-medium text-gray-800 tracking-tight">{item.eventName}</h4>
+                          <p className="text-sm text-gray-400 mt-2 font-normal">Deadline Passed: {item.deadline ? format(new Date(item.deadline), "MMMM d, yyyy") : "N/A"}</p>
+                        </div>
+                      </div>
+                      <span className="text-2xl font-bold text-red-500 tracking-tighter">$ {item.totalDue?.toFixed(2)}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-dashed border-gray-100 italic">
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>Base: ${item.minContribution}</span>
+                        <span>Penalty: ${item.penaltyFee}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyState
+                  image="/images/notFound/error.png"
+                  title="No Outstanding Dues"
+                  description="All dues have been cleared. The user has no remaining balance."
+                />
+              )}
             </div>
-          ) : (
-            <EmptyState 
-              image="/images/notFound/error.png"
-              title="No Outstanding Dues"
-              description="All dues have been cleared. The user has no remaining balance."
-            />
           )}
         </TabsContent>
       </Tabs>

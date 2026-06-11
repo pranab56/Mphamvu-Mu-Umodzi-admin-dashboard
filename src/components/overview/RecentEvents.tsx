@@ -33,7 +33,7 @@ interface RecentEventsProps {
 export default function RecentEvents({ data, isLoading }: RecentEventsProps) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] overflow-hidden mt-8 h-[300px] flex items-center justify-center">
+      <div className="bg-white rounded-xl shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] overflow-hidden mt-4 sm:mt-8 h-[300px] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#16A34A]"></div>
       </div>
     );
@@ -49,8 +49,8 @@ export default function RecentEvents({ data, isLoading }: RecentEventsProps) {
     });
   };
   return (
-    <div className="bg-white rounded-xl shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] overflow-hidden mt-8">
-      <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100">
+    <div className="bg-white rounded-xl shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] overflow-hidden mt-4 sm:mt-8">
+      <div className="flex justify-between items-center px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
         <h3 className="text-xl font-bold text-[#1A1C1F]">Recent Events</h3>
         <Link href="/events" className="text-[14px] font-bold text-[#16A34A] hover:underline">
           View All

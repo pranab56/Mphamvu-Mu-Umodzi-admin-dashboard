@@ -21,12 +21,19 @@ import { removeToken } from "../../utils/storage";
 const routeTitleMap: Record<string, string> = {
   "": "Dashboard",
   "notification": "Notifications",
+  "members": "Members",
+  "events": "Events",
+  "payments": "Payments",
+  "reports": "Reports",
+  "communication": "Communication",
+  "settings": "Settings",
+  "roles": "Roles & Permissions",
+  "profile": "My Profile",
   "users-management": "Users Management",
   "merchants": "Merchants",
   "receipts": "Receipts",
   "offers": "Offers",
   "redemptions": "Redemptions",
-  "settings": "Settings",
   "faq": "FAQ's",
   "terms": "Terms of Service",
   "privacy": "Privacy Policy",
@@ -66,12 +73,15 @@ export default function MyNavber() {
   return (
     <header className="flex h-16 md:h-20 items-center justify-between gap-3 md:gap-4 bg-[#E4E6E9] px-4 md:px-8 w-full shrink-0 border-b border-gray-200/50">
 
-      {/* ── Sidebar Trigger (Mobile/Tablet) ── */}
-      <div className="lg:hidden flex items-center">
-        <SidebarTrigger className="w-10 h-10 bg-white" />
+      {/* ── Sidebar Trigger + Mobile Page Title ── */}
+      <div className="flex lg:hidden items-center gap-3 min-w-0">
+        <SidebarTrigger className="w-10 h-10 bg-[#1A1C21] text-white hover:bg-[#2a2d33] rounded-lg shadow-sm shrink-0" />
+        <span className="text-sm font-semibold text-[#2C2E33] truncate">
+          {breadcrumbs[breadcrumbs.length - 1]?.label}
+        </span>
       </div>
 
-      {/* ── Breadcrumbs ── */}
+      {/* ── Breadcrumbs (Desktop) ── */}
       <div className="hidden lg:flex items-center gap-2 text-[#737780]">
         {breadcrumbs.map((crumb, i) => (
           <div key={`${crumb.label}-${i}`} className="flex items-center gap-2">
@@ -93,7 +103,7 @@ export default function MyNavber() {
       </div>
 
       {/* ── Right Section ── */}
-      <div className="flex items-center gap-5 md:gap-7 ml-auto sm:ml-0 shrink-0">
+      <div className="flex items-center gap-4 md:gap-7 ml-auto shrink-0">
 
         {/* Notification Bell */}
         <Link href="/notification" className="flex items-center">

@@ -41,22 +41,22 @@ function SettingsInner() {
   };
 
   return (
-    <div className="w-full py-6 pb-20">
-      <div className="w-full flex flex-col gap-10">
+    <div className="w-full py-4 sm:py-6 pb-20">
+      <div className="w-full flex flex-col gap-6 sm:gap-10">
         {/* Header */}
         <div>
-          <h1 className="text-[32px] font-medium text-gray-900 tracking-tight">Settings</h1>
-          <p className="text-base text-gray-500 font-normal mt-2">Review, verify and manage merchant registrations across the ecosystem.</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-medium text-gray-900 tracking-tight">Settings</h1>
+          <p className="text-sm sm:text-base text-gray-500 font-normal mt-2">Review, verify and manage merchant registrations across the ecosystem.</p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-2 bg-[#EAECEF] rounded-full p-1.5 w-fit">
+        <div className="flex flex-wrap items-center gap-2 bg-[#EAECEF] rounded-2xl sm:rounded-full p-1.5 w-full sm:w-fit">
           {(["Financial & Contribution Rules", "Notifications", "Legal Documents", "Roles & Permissions"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "relative px-6 py-2.5 rounded-full text-[13px] font-medium transition-all cursor-pointer z-10",
+                "relative flex-1 sm:flex-none px-3 sm:px-6 py-2 sm:py-2.5 rounded-full text-[12px] sm:text-[13px] font-medium transition-all cursor-pointer z-10 text-center",
                 activeTab === tab ? "text-white shadow-sm" : "text-gray-500 hover:text-gray-700"
               )}
             >
@@ -86,12 +86,12 @@ function SettingsInner() {
             {activeTab === "Roles & Permissions" && <RolesSettings />}
             {activeTab === "Legal Documents" && (
               <div className="flex flex-col gap-4">
-                <div className="bg-white border border-gray-100 rounded-2xl px-8 py-6 shadow-sm mb-4">
+                <div className="bg-white border border-gray-100 rounded-2xl px-4 sm:px-8 py-4 sm:py-6 shadow-sm mb-4">
                   <h2 className="text-lg font-medium text-gray-900">Legal Documents</h2>
                   <p className="text-sm text-gray-500 font-normal mt-1">Modify or update terms of service, privacy policies, and other legal documents</p>
                 </div>
                 {legalDocs.map((doc) => (
-                  <div key={doc.id} onClick={() => router.push(doc.route)} className="bg-white cursor-pointer border border-gray-100 rounded-2xl px-8 py-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
+                  <div key={doc.id} onClick={() => router.push(doc.route)} className="bg-white cursor-pointer border border-gray-100 rounded-2xl px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0 group-hover:bg-orange-50 transition-colors">
                         <FileText className="w-5 h-5 text-gray-400 group-hover:text-[#8B2F0E]" />

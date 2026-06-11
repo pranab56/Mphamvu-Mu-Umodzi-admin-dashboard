@@ -24,7 +24,7 @@ export default function MembershipGrowth({ data, isLoading }: MembershipGrowthPr
   if (isLoading) {
     return (
       <Card className="rounded-xl border-none shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] bg-white h-full p-2">
-        <CardHeader className="pb-8">
+        <CardHeader className="pb-4 sm:pb-8">
           <CardTitle className="text-xl font-bold text-[#1A1C1F]">Membership Growth</CardTitle>
         </CardHeader>
         <CardContent>

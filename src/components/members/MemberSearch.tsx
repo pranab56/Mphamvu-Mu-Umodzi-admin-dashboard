@@ -20,7 +20,7 @@ export function MemberSearch({ value, onChange }: MemberSearchProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search here..."
-          className="pl-12 pr-4 py-8 w-full bg-[#E5E7EB]/50 border-none rounded-xl text-gray-700 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-[#8B2F0E]/20 text-lg font-normal"
+          className="pl-12 pr-4 py-3 sm:py-5 md:py-8 w-full bg-[#E5E7EB]/50 border-none rounded-xl text-gray-700 placeholder:text-gray-500 focus-visible:ring-2 focus-visible:ring-[#8B2F0E]/20 text-sm sm:text-base font-normal"
         />
       </div>
     </div>

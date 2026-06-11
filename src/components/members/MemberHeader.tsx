@@ -13,15 +13,15 @@ import { AddMemberForm } from "./AddMemberForm";
 
 export function MemberHeader() {
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 md:mb-8">
       <div>
-        <h1 className="text-3xl font-medium text-gray-900 tracking-tight">Member Management</h1>
-        <p className="text-base text-gray-500 mt-1">458 total members</p>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-medium text-gray-900 tracking-tight">Member Management</h1>
+        <p className="text-sm sm:text-base text-gray-500 mt-1">458 total members</p>
       </div>
-      
+
       <Sheet>
         <SheetTrigger asChild>
-          <Button className="bg-[#8B2F0E] hover:bg-[#8B2F0E]/90 transition-colors text-white rounded-full px-10 py-6 flex items-center gap-2 text-sm font-medium">
+          <Button className="bg-[#8B2F0E] hover:bg-[#8B2F0E]/90 transition-colors text-white rounded-full px-6 sm:px-10 py-5 sm:py-6 flex items-center gap-2 text-sm font-medium">
             <Plus className="w-5 h-5 stroke-[3px]" />
             Add New Member
           </Button>

@@ -49,7 +49,7 @@ export default function CardStates({ data, isLoading }: CardStatesProps) {
     },
   ];
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-4 md:mb-8 mt-4 md:mt-6">
       {stats.map((stat, index) => (
         <motion.div
           key={stat.title}
@@ -57,13 +57,13 @@ export default function CardStates({ data, isLoading }: CardStatesProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.4 }}
         >
-          <Card className="rounded-xl border-none shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] h-full p-6 bg-white overflow-hidden">
-            <CardContent className="p-0 flex flex-col gap-4">
+          <Card className="rounded-xl border-none shadow-[0_4px_20px_0_rgba(0,0,0,0.05)] h-full p-4 sm:p-6 bg-white overflow-hidden">
+            <CardContent className="p-0 flex flex-col gap-3 sm:gap-4">
               <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", stat.iconBg)}>
                 <stat.icon className={cn("w-6 h-6", stat.color)} />
               </div>
               <div className="space-y-1">
-                <p className="text-3xl font-bold text-[#1A1C1F]">
+                <p className="text-2xl sm:text-3xl font-bold text-[#1A1C1F]">
                   {stat.value}
                 </p>
                 <p className="text-[14px] font-semibold text-gray-500">

@@ -142,7 +142,7 @@ export function DependentTable({ searchTerm = "" }: DependentTableProps) {
                         trigger={
                           <button
                             disabled={isUpdating || item.status !== "pending"}
-                            className="px-5 py-2 rounded-lg border border-green-200 bg-green-50 text-green-600 text-sm font-bold hover:bg-green-600 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95"
+                            className="px-5 py-2 rounded-lg border cursor-pointer border-green-200 bg-green-50 text-green-600 text-sm font-bold hover:bg-green-600 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95"
                           >
                             Approve
                           </button>
@@ -155,7 +155,7 @@ export function DependentTable({ searchTerm = "" }: DependentTableProps) {
                         trigger={
                           <button
                             disabled={isUpdating || item.status !== "pending"}
-                            className="px-5 py-2 rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-600 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95"
+                            className="px-5 py-2 rounded-lg border border-red-200 cursor-pointer bg-red-50 text-red-600 text-sm font-bold hover:bg-red-600 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95"
                           >
                             Reject
                           </button>

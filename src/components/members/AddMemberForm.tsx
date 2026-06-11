@@ -101,10 +101,7 @@ export function AddMemberForm() {
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3 pt-4 mt-auto">
-        <Button variant="outline" className="bg-gray-100 border-none rounded-lg px-10 py-5 text-gray-600 font-medium hover:bg-gray-200">
-          Cancel
-        </Button>
+      
         <Button 
           disabled={isLoading}
           onClick={handleSubmit}
@@ -112,7 +109,7 @@ export function AddMemberForm() {
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
         </Button>
-      </div>
+      
 
       <style jsx global>{`
         .react-tel-input .form-control {

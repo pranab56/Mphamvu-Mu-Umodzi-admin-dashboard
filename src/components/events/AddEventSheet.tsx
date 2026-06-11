@@ -78,7 +78,7 @@ interface AddEventSheetProps {
     eventTypeId: string;
     description: string;
     minContribution: number;
-    targetContribution: number;
+    totalCollected: number;
     eventDeadline: string;
     banner: string;
     beneficiary: {
@@ -222,7 +222,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
         eventTypeId: initialData.eventTypeId,
         description: initialData.description,
         minContribution: initialData.minContribution?.toString(),
-        targetContribution: initialData.targetContribution?.toString(),
+        targetContribution: initialData.totalCollected?.toString(),
         deadline: deadlineDate,
         beneficiaryName: initialData.beneficiary?.name,
         relationship: initialData.beneficiary?.relationship || "User",
@@ -318,7 +318,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
         <ScrollArea className="h-full">
           <form onSubmit={handleSubmit(onSubmit)} className="p-8">
             <SheetHeader className="mb-0 p-0">
-              <SheetTitle className="text-2xl font-medium text-gray-900">
+              <SheetTitle className="text-2xl font-medium text-gray-900 pb-5">
                 {isEdit ? "Edit Event" : "Create a New Event"}
               </SheetTitle>
             </SheetHeader>
@@ -326,7 +326,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
             <div className="space-y-10">
               {/* Event Details Section */}
               <section className="space-y-6">
-                <h3 className="text-xl font-medium text-[#8B2F0E] tracking-tight">Event Details</h3>
+                {/* <h3 className="text-xl font-medium text-[#8B2F0E] tracking-tight">Event Details</h3> */}
                 <div className="grid grid-cols-1 gap-6 border p-5 rounded-lg bg-gray-100 border-gray-300 shadow-sm">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">Event Name</Label>
@@ -377,7 +377,19 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                         className="hidden"
                         onChange={(e) => setValue("coverImage", e.target.files)}
                       />
-                      {getPreview(coverImage) ? (
+                      {coverImage && typeof coverImage === "string" ? (
+                        <div className="relative w-full h-full group">
+                          <Image
+                            src={coverImage.startsWith("http") ? coverImage : baseURL + coverImage}
+                            alt="Preview"
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="text-white text-sm font-medium">Change Image</span>
+                          </div>
+                        </div>
+                      ) : getPreview(coverImage) ? (
                         <div className="relative w-full h-full group">
                           <Image
                             src={getPreview(coverImage)!}
@@ -622,7 +634,7 @@ export function AddEventSheet({ trigger, mode = "add", initialData }: AddEventSh
                         {profileImage && typeof profileImage === 'string' ? (
                           <div className="relative w-full h-full group">
                             <Image
-                              src={baseURL + profileImage}
+                              src={profileImage.startsWith("http") ? profileImage : baseURL + profileImage}
                               alt="Profile"
                               fill
                               className="object-cover"

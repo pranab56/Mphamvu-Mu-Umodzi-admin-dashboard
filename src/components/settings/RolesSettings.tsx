@@ -30,6 +30,7 @@ import {
   Calendar,
   DollarSign,
   FileText,
+  Inbox,
   LayoutDashboard,
   Loader2,
   MessageCircle,
@@ -56,6 +57,7 @@ const modules = [
   { name: "Events", icon: Calendar },
   { name: "Payments", icon: DollarSign },
   { name: "Reports", icon: FileText },
+  { name: "Requests", icon: Inbox },
   { name: "Communication", icon: MessageCircle },
   { name: "Settings", icon: SettingsIcon },
 ];

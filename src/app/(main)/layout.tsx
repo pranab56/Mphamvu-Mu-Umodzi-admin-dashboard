@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 // import { Geist, Geist_Mono } from "next/font/google";
 import OptimusSidebar from "@/components/appSidebar/AppsideBar";
 import Header from "@/components/header/Header";
@@ -22,9 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <ProtectedRoute>
-      <SidebarProvider>
+      <SidebarProvider
+        defaultOpen={true}
+        style={{ "--sidebar-width": "260px" } as CSSProperties}
+      >
         <OptimusSidebar />
-        <SidebarInset className="bg-gray-100 flex flex-col overflow-hidden h-screen">
+        <SidebarInset className="bg-gray-100 flex flex-col overflow-hidden h-svh min-w-0">
           <Header />
           <main className="flex-1 p-4 md:p-8 overflow-y-auto min-w-0 flex flex-col">{children}</main>
         </SidebarInset>
