@@ -21,16 +21,17 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // Define public routes (auth routes)
+  // Define public routes (auth routes and legal pages)
   const isAuthRoute = pathname.startsWith('/auth');
+  const isPublicLegalRoute = pathname === '/terms' || pathname === '/privacy-policy';
   const isPublicFile = pathname.match(/\.(.*)$/) || pathname.startsWith('/_next');
 
   if (isPublicFile) {
     return NextResponse.next();
   }
 
-  // If there's no token and it's not an auth route, redirect to login
-  if (!token && !isAuthRoute) {
+  // If there's no token and it's not an auth route or a public legal route, redirect to login
+  if (!token && !isAuthRoute && !isPublicLegalRoute) {
     const loginUrl = new URL('/auth/login', request.url);
     return NextResponse.redirect(loginUrl);
   }
